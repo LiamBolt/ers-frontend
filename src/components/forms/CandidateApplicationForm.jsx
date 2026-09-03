@@ -127,7 +127,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
         <div className="space-y-4">
           <Input
             label="Full Name"
-            placeholder="John Doe"
+            placeholder="Aine Mary"
             required
             error={errors.fullName?.message}
             {...register('fullName')}
