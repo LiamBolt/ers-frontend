@@ -1,0 +1,98 @@
+@import '@fontsource-variable/bricolage-grotesque';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ers-bg: #FDF1EE;
+  --ers-surface: #FFFFFF;
+  --ers-ink: #17151C;
+  --ers-ink-soft: #4A4750;
+  --ers-line: #EAD9D3;
+  --ers-primary: #E8592E;
+  --ers-primary-ink: #FFF8F5;
+  --ers-accent: #2F6F5E;
+  --ers-danger: #C43D3D;
+  --ers-warning: #B8842E;
+}
+
+@layer components {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 1.25rem;
+    box-shadow:
+      0 1px 1px rgba(23, 21, 28, 0.03),
+      0 8px 24px rgba(232, 89, 46, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bg-blobs::before,
+  .bg-blobs::after {
+    content: '';
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+  }
+
+  .bg-blobs::before {
+    width: 600px;
+    height: 600px;
+    background: rgba(232, 89, 46, 0.14);
+    top: -10%;
+    right: -10%;
+  }
+
+  .bg-blobs::after {
+    width: 400px;
+    height: 400px;
+    background: rgba(47, 111, 94, 0.12);
+    bottom: -10%;
+    left: -5%;
+  }
+
+  .input-surface {
+    background: rgba(255, 255, 255, 0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--ers-primary);
+  outline-offset: 2px;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out;
+}
