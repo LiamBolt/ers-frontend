@@ -1,0 +1,265 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"] // one SQL query per include instead of one per relation
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums. Values are the exact strings the frontend already uses.
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  CANDIDATE
+  HR_OFFICER
+  INTERVIEWER
+  MANAGER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  DEACTIVATED
+}
+
+enum JobStatus {
+  PUBLISHED
+  CLOSED
+}
+
+// SRS 3.3 recruitment transaction state model.
+enum ApplicationState {
+  SUBMITTED
+  UNDER_SCREENING
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  UNDER_EVALUATION
+  SELECTED
+  PENDING_APPROVAL
+  OFFER_SENT
+  OFFER_ACCEPTED
+  ONBOARDING
+  COMPLETED
+  REJECTED
+  DECLINED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+enum OfferStatus {
+  OFFER_SENT
+  ACCEPTED
+  DECLINED
+}
+
+enum OnboardingKind {
+  DOCUMENT
+  CONFIRMATION
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String
+  phone        String?
+  passwordHash String
+  role         UserRole
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  jobsCreated   Job[]
+  applications  Application[]      @relation("CandidateApplications")
+  panelSeats    InterviewPanelist[]
+  evaluations   Evaluation[]
+  approvals     Approval[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  historyEvents ApplicationHistory[]
+  onboardingDone OnboardingItem[]
+
+  @@index([role])
+}
+
+model Job {
+  id            String    @id @default(uuid())
+  code          String    @unique @default(cuid())
+  title         String
+  department    String
+  description   String?
+  numPositions  Int       @default(1)
+  requiredSkills String
+  closingDate   DateTime
+  status        JobStatus @default(PUBLISHED)
+  createdById   String
+  createdBy     User      @relation(fields: [createdById], references: [id])
+  createdAt     DateTime  @default(now())
+
+  applications Application[]
+
+  @@index([status])
+}
+
+// The long-duration transaction: one candidate pursuing one job.
+// `state` is the single source of truth for where it stands (SRS 4.1).
+model Application {
+  id          String           @id @default(uuid())
+  ref         String           @unique
+  candidateId String
+  candidate   User             @relation("CandidateApplications", fields: [candidateId], references: [id])
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id])
+  state       ApplicationState @default(SUBMITTED)
+  appliedAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Candidate-supplied details (FR-03)
+  fullName       String
+  phone          String
+  address        String
+  qualifications Json
+  experience     Json
+  references     Json
+  cvUrl          String
+
+  history     ApplicationHistory[]
+  interview   Interview?
+  approval    Approval?
+  offer       Offer?
+  onboarding  OnboardingItem[]
+
+  @@unique([candidateId, jobId])
+  @@index([state])
+}
+
+// Append-only audit trail of every transition and notable event (BR-04, NFR-06).
+// Rows are only ever inserted; no update/delete code path exists.
+model ApplicationHistory {
+  id            String           @id @default(uuid())
+  applicationId String
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  state         ApplicationState
+  note          String           @default("")
+  actorId       String?
+  actor         User?            @relation(fields: [actorId], references: [id])
+  actorName     String
+  actorRole     String
+  at            DateTime         @default(now())
+
+  @@index([applicationId, at])
+}
+
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String          @unique
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime
+  location      String
+  status        InterviewStatus @default(SCHEDULED)
+
+  panel       InterviewPanelist[]
+  evaluations Evaluation[]
+}
+
+model InterviewPanelist {
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@id([interviewId, userId])
+}
+
+model Evaluation {
+  id                  String    @id @default(uuid())
+  interviewId         String
+  interview           Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  panelistId          String
+  panelist            User      @relation(fields: [panelistId], references: [id])
+  technicalScore      Int
+  communicationScore  Int
+  problemSolvingScore Int
+  teamworkScore       Int
+  comments            String
+  createdAt           DateTime  @default(now())
+
+  @@unique([interviewId, panelistId])
+}
+
+model Approval {
+  id            String           @id @default(uuid())
+  applicationId String           @unique
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  approverId    String
+  approver      User             @relation(fields: [approverId], references: [id])
+  decision      ApprovalDecision
+  note          String           @default("")
+  timestamp     DateTime         @default(now())
+}
+
+model Offer {
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  salary        Decimal     @db.Decimal(14, 2)
+  startDate     DateTime
+  contract      String
+  status        OfferStatus @default(OFFER_SENT)
+  sentAt        DateTime    @default(now())
+  responseDate  DateTime?
+}
+
+// One row per verified document or recorded department confirmation (BR-08).
+model OnboardingItem {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  kind          OnboardingKind
+  key           String
+  doneById      String
+  doneBy        User           @relation(fields: [doneById], references: [id])
+  doneAt        DateTime       @default(now())
+
+  @@unique([applicationId, kind, key])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String
+  recipient   User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  message     String
+  type        String
+  link        String?
+  readAt      DateTime?
+  sentAt      DateTime  @default(now())
+
+  @@index([recipientId, readAt])
+}
+
+// Immutable log of actions and authorisation failures (NFR-04, NFR-06).
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  action         String
+  affectedRecord String
+  at             DateTime @default(now())
+
+  @@index([at])
+}
