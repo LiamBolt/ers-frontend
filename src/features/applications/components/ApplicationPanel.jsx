@@ -51,7 +51,6 @@ export default function ApplicationPanel({ appId, onClose }) {
   }
 
   const role = user.role
-  const isHR = role === 'HR_OFFICER'
   const isStaff = STAFF_ROLES.includes(role) // HR officers and admins move applications on
   const isPanel = role === 'INTERVIEWER'
   const isManager = role === 'MANAGER'
@@ -86,9 +85,9 @@ export default function ApplicationPanel({ appId, onClose }) {
       {isStaff && !move && <StageMoveBar app={app} onPick={setMove} />}
       {isPanel && app.state === 'UNDER_EVALUATION' && mine && !alreadyEvaluated && <EvaluationSection {...shared} />}
       {isPanel && mine && app.state === 'UNDER_EVALUATION' && <SelectionSection {...shared} />}
-      {isManager && awaitingDecision && <DecisionSection {...shared} />}
-      {isHR && approvedAwaitingOffer && <OfferFormSection {...shared} />}
-      {isHR && app.state === 'OFFER_SENT' && <OfferResponseSection {...shared} />}
+      {(isManager || role === 'ADMIN') && awaitingDecision && <DecisionSection {...shared} />}
+      {isStaff && approvedAwaitingOffer && <OfferFormSection {...shared} />}
+      {isStaff && app.state === 'OFFER_SENT' && <OfferResponseSection {...shared} />}
 
       {/* ---- record ---- */}
       {role !== 'INTERVIEWER' && <CandidateDetails app={app} />}

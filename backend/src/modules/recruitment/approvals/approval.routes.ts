@@ -5,6 +5,6 @@ import { approvalSchema } from "./approval.schema";
 import * as controller from "./approval.controller";
 
 const router = Router({ mergeParams: true });
-router.post("/", requireRole("MANAGER"), validate(approvalSchema), controller.decide);
+router.post("/", requireRole("MANAGER", "ADMIN"), validate(approvalSchema), controller.decide);
 
 export default router;

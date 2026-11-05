@@ -2,8 +2,7 @@ import { ApplicationState, UserRole } from "@prisma/client";
 
 type Actor = UserRole | "SYSTEM";
 
-const HR: Actor[] = ["HR_OFFICER"];
-// Administrators can drive the pipeline up to the manager hand-off (they may act for HR).
+// Administrators can act at every stage (for HR, the manager and the offer).
 const HR_OR_ADMIN: Actor[] = ["HR_OFFICER", "ADMIN"];
 const STAFF_OR_PANEL: Actor[] = ["HR_OFFICER", "ADMIN", "INTERVIEWER"];
 
@@ -22,10 +21,10 @@ const RULES: Record<string, Actor[]> = {
   "UNDER_EVALUATION>SELECTED": STAFF_OR_PANEL,
   "UNDER_EVALUATION>REJECTED": STAFF_OR_PANEL,
   "SELECTED>PENDING_APPROVAL": ["SYSTEM"],
-  "PENDING_APPROVAL>REJECTED": ["MANAGER"],
-  "PENDING_APPROVAL>OFFER_SENT": HR,
-  "OFFER_SENT>OFFER_ACCEPTED": ["HR_OFFICER", "CANDIDATE"],
-  "OFFER_SENT>DECLINED": ["HR_OFFICER", "CANDIDATE"],
+  "PENDING_APPROVAL>REJECTED": ["MANAGER", "ADMIN"],
+  "PENDING_APPROVAL>OFFER_SENT": HR_OR_ADMIN,
+  "OFFER_SENT>OFFER_ACCEPTED": ["HR_OFFICER", "ADMIN", "CANDIDATE"],
+  "OFFER_SENT>DECLINED": ["HR_OFFICER", "ADMIN", "CANDIDATE"],
   "OFFER_ACCEPTED>ONBOARDING": ["SYSTEM"],
   "ONBOARDING>COMPLETED": ["HR_OFFICER", "ADMIN"],
 };

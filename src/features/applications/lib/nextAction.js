@@ -11,7 +11,8 @@ const WAITING_ON = {
 
 // What the signed-in user needs to do next on an application ('' = nothing).
 export function nextAction(app, user) {
-  const role = user.role
+  const role = user.role === 'ADMIN' ? 'HR_OFFICER' : user.role // an admin can do whatever HR can
+  const isAdmin = user.role === 'ADMIN'
 
   if (app.state === 'UNDER_EVALUATION') {
     if (role === 'INTERVIEWER') {
@@ -23,7 +24,7 @@ export function nextAction(app, user) {
     return ''
   }
   if (app.state === 'PENDING_APPROVAL') {
-    if (!app.approval) return role === 'MANAGER' ? 'Approve or reject' : ''
+    if (!app.approval) return role === 'MANAGER' || isAdmin ? 'Approve or reject' : ''
     return role === 'HR_OFFICER' ? 'Send offer' : ''
   }
   if (app.state === 'ONBOARDING' && role === 'MANAGER') {
