@@ -16,6 +16,7 @@ npm install
 cp .env.example .env      # fill in the values (see below)
 npx prisma migrate deploy # create tables
 npm run seed              # one bootstrap ADMIN account, no demo data
+npm run seed:jobs         # the agency's vacancies (idempotent; edit src/db/seed-jobs.ts)
 npm run dev               # http://localhost:3000, health: /api/health
 ```
 
@@ -95,6 +96,7 @@ Auth.js: `GET /auth/csrf`, `POST /auth/callback/credentials`,
 | `GET /accounts/me` | any signed-in user |
 | `GET /accounts/panelists` | HR, Admin |
 | `GET/POST /users`, `PATCH /users/:id` | Admin |
+| `GET /jobs/public` | public (open vacancies for the landing page; no internal fields) |
 | `GET /jobs`, `GET /jobs/:id` | any (candidates see open vacancies only) |
 | `POST /jobs`, `PATCH /jobs/:id` | HR, Admin |
 | `GET /applications`, `GET /applications/:id` | any, scoped by role |

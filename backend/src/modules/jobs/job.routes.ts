@@ -5,6 +5,10 @@ import { createJobSchema, updateJobSchema } from "./job.schema";
 import * as controller from "./job.controller";
 
 const router = Router();
+
+// Public: powers the landing page. Must stay above requireAuth and /:id.
+router.get("/public", controller.listPublic);
+
 router.use(requireAuth);
 
 router.get("/", controller.list);

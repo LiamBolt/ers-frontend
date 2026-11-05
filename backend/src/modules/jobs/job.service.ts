@@ -26,3 +26,17 @@ export async function setStatus(user: User, id: string, status: "PUBLISHED" | "C
   await audit(prisma, user.id, `JOB_${status}`, `job:${id}`);
   return job;
 }
+
+// Public landing-page listing: open vacancies only, no internal fields (no createdBy).
+export async function listPublic() {
+  const jobs = await repo.listOpen();
+  return jobs.map(({ id, title, department, description, numPositions, requiredSkills, closingDate }) => ({
+    id,
+    title,
+    department,
+    description,
+    numPositions,
+    requiredSkills,
+    closingDate,
+  }));
+}

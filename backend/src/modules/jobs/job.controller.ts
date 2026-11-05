@@ -33,3 +33,11 @@ export const setStatus: RequestHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+export const listPublic: RequestHandler = async (_req, res, next) => {
+  try {
+    send(res, await service.listPublic(), "Open vacancies fetched successfully");
+  } catch (err) {
+    next(err);
+  }
+};
