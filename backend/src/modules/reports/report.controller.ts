@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { send } from "../../utils/http";
+import { send } from "../../common/http";
 import { reportQuerySchema } from "./report.schema";
 import * as service from "./report.service";
 

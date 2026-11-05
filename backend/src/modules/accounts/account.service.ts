@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { httpError } from "../../utils/http";
+import { httpError } from "../../common/http";
 import type { RegisterInput } from "./account.schema";
 import * as repo from "./account.repository";
 

@@ -11,7 +11,7 @@ generate:
 	npx prisma generate
 
 seed:
-	docker-compose exec api npx tsx src/db/seed.ts
+	docker-compose exec api npx tsx src/database/seeds/admin.seed.ts
 
 smoke:
 	./scripts/smoke.sh

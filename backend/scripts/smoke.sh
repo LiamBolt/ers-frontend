@@ -69,6 +69,15 @@ json hr POST /jobs "{\"title\":\"Smoke Accountant $RUN\",\"department\":\"Financ
 JOB=$(field .data.id)
 call cand GET /jobs; expect "candidate sees open vacancies" 200
 
+echo "== public vacancy pages (no sign-in)"
+call anon GET /jobs/public; expect "public list needs no session" 200
+check "public list includes the new vacancy" true "$(field "[.data[] | select(.id==\"$JOB\")] | length == 1")"
+check "public list hides internal fields" false "$(field "[.data[] | select(.id==\"$JOB\")][0] | has(\"createdById\")")"
+call anon GET "/jobs/public/$JOB"; expect "public vacancy by id" 200
+check "public vacancy title" "Smoke Accountant $RUN" "$(field .data.title)"
+call anon GET /jobs/public/00000000-0000-0000-0000-000000000000; expect "unknown public vacancy" 404
+call anon GET "/jobs/$JOB"; expect "authenticated vacancy route stays protected" 401
+
 echo "== application (FR-03)"
 CV="$(cd "$(dirname "$0")" && pwd)/fixtures/sample-cv.pdf"
 FORM=(-F "jobId=$JOB" -F "fullName=Smoke Candidate" -F "phone=+256700000000" -F "address=Plot 1 Kampala Road Kampala"
@@ -137,6 +146,10 @@ call cand GET /notifications/count; expect "notification count" 200
 call p1 GET /reports/summary; expect "panelist cannot read reports" 403
 call mgr GET "/reports/summary?department=Finance"; expect "manager reads report" 200
 check "report counts hire" true "$(field '.data.totals.hired >= 1')"
+
+echo "== closed vacancy leaves the public site"
+json hr PATCH "/jobs/$JOB" '{"status":"CLOSED"}'; expect "HR closes the vacancy" 200
+call anon GET "/jobs/public/$JOB"; expect "closed vacancy is 404 publicly" 404
 
 echo "== deactivated account cannot sign in (FR-12)"
 json admin PATCH "/users/${ID[p2]}" '{"status":"DEACTIVATED"}'; expect "deactivate p2" 200

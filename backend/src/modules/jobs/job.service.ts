@@ -1,7 +1,7 @@
-import { User } from "@prisma/client";
-import { httpError } from "../../utils/http";
-import { audit } from "../../utils/audit";
-import { prisma } from "../../db";
+import { Job, User } from "@prisma/client";
+import { httpError } from "../../common/http";
+import { audit } from "../../common/audit";
+import { prisma } from "../../database";
 import * as repo from "./job.repository";
 import type { CreateJobInput } from "./job.schema";
 
@@ -27,16 +27,21 @@ export async function setStatus(user: User, id: string, status: "PUBLISHED" | "C
   return job;
 }
 
-// Public landing-page listing: open vacancies only, no internal fields (no createdBy).
+// Public view of a vacancy: no internal fields (no createdBy).
+function toPublicJob({ id, title, department, description, numPositions, requiredSkills, closingDate }: Job) {
+  return { id, title, department, description, numPositions, requiredSkills, closingDate };
+}
+
+const isOpen = (job: Job) => job.status === "PUBLISHED" && job.closingDate > new Date();
+
+// Landing-page listing: open vacancies only.
 export async function listPublic() {
-  const jobs = await repo.listOpen();
-  return jobs.map(({ id, title, department, description, numPositions, requiredSkills, closingDate }) => ({
-    id,
-    title,
-    department,
-    description,
-    numPositions,
-    requiredSkills,
-    closingDate,
-  }));
+  return (await repo.listOpen()).map(toPublicJob);
+}
+
+// One open vacancy for its public page. Closed or unknown ids are a 404.
+export async function getPublic(id: string) {
+  const job = await repo.findById(id);
+  if (!job || !isOpen(job)) throw httpError(404, "This vacancy is no longer open");
+  return toPublicJob(job);
 }

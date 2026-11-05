@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { send } from "../../utils/http";
+import { send } from "../../common/http";
 import * as service from "./job.service";
 
 export const list: RequestHandler = async (req, res, next) => {
@@ -37,6 +37,14 @@ export const setStatus: RequestHandler = async (req, res, next) => {
 export const listPublic: RequestHandler = async (_req, res, next) => {
   try {
     send(res, await service.listPublic(), "Open vacancies fetched successfully");
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getPublic: RequestHandler = async (req, res, next) => {
+  try {
+    send(res, await service.getPublic(String(req.params.id)), "Vacancy fetched successfully");
   } catch (err) {
     next(err);
   }

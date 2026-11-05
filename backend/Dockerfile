@@ -23,7 +23,7 @@ RUN npm ci
 COPY . .
 RUN npx prisma generate
 
-CMD ["npx", "nodemon", "--watch", "src", "--ext", "ts", "--exec", "tsx src/index.ts"]
+CMD ["npx", "nodemon", "--watch", "src", "--ext", "ts", "--exec", "tsx src/server.ts"]
 
 ################################
 # Stage 3 — builder
@@ -56,4 +56,4 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 
 USER node
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/server.js"]

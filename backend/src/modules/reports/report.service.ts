@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "../../db";
-import { CLOSED_STATES } from "../workflow/workflow.constants";
+import { prisma } from "../../database";
+import { CLOSED_STATES } from "../recruitment/workflow/workflow.constants";
 import type { ReportQuery } from "./report.schema";
 
 const MAIN_PATH = [

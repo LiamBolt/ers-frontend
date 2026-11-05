@@ -2,7 +2,7 @@ import { Router } from "express";
 import accountRouter from "../modules/accounts/account.routes";
 import userRouter from "../modules/users/user.routes";
 import jobRouter from "../modules/jobs/job.routes";
-import applicationRouter from "../modules/applications/application.routes";
+import applicationRouter from "../modules/recruitment/applications/application.routes";
 import notificationRouter from "../modules/notifications/notification.routes";
 import reportRouter from "../modules/reports/report.routes";
 

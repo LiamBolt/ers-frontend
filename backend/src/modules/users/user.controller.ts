@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { send } from "../../utils/http";
+import { send } from "../../common/http";
 import * as service from "./user.service";
 
 export const list: RequestHandler = async (req, res, next) => {

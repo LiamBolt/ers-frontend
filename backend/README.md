@@ -16,7 +16,7 @@ npm install
 cp .env.example .env      # fill in the values (see below)
 npx prisma migrate deploy # create tables
 npm run seed              # one bootstrap ADMIN account, no demo data
-npm run seed:jobs         # the agency's vacancies (idempotent; edit src/db/seed-jobs.ts)
+npm run seed:jobs         # the agency's vacancies (idempotent; edit src/database/seeds/jobs.data.ts)
 npm run dev               # http://localhost:3000, health: /api/health
 ```
 
@@ -46,23 +46,26 @@ Never commit `.env`. Drop `channel_binding=require` from Neon URLs; Prisma ignor
 
 ## Layout
 
+See also `../docs/ARCHITECTURE.md` for the whole repository.
+
 ```
 src/
-  index.ts                 app setup; Auth.js mounted at /api/auth
-  config/                  env, cloudinary, multer (CV upload rules)
-  db/                      Prisma client, seed (admin only)
-  auth/auth.config.ts      Auth.js credentials provider (bcrypt)
-  middlewares/             requireAuth, requireRole, validate (Zod), error
-  utils/                   http (HttpError, send), audit, notify
-  routes/index.ts          mounts every module under /api
-  modules/<name>/          <name>.routes.ts -> .controller.ts -> .service.ts
-                           (-> .repository.ts) + .schema.ts (Zod)
-    workflow/              THE state machine: rules table, engine, constants
-    applications/          list/read/submit + serializer (the JSON contract)
-    interviews/ evaluations/ approvals/ offers/ onboarding/   stage actions
-    jobs/ accounts/ users/ notifications/ reports/
-prisma/schema.prisma       SRS section 4.2 entities
-scripts/                   smoke.sh, cleanup-test-data.ts
+  server.ts               starts listening (entry point)
+  app.ts                  builds the Express app; Auth.js mounted at /api/auth
+  config/                 env, cloudinary, upload (CV file rules)
+  database/               Prisma client; seeds/ (admin.seed.ts, jobs.seed.ts, jobs.data.ts)
+  auth/                   auth.config.ts (Auth.js), auth.middleware.ts (requireAuth, requireRole)
+  common/                 http.ts (HttpError, send), audit.ts, notify.ts,
+                          middlewares/ (validate, error-handler), types/
+  routes/index.ts         mounts every module under /api
+  modules/
+    accounts/ users/ jobs/ notifications/ reports/
+    recruitment/          the application lifecycle
+      workflow/             state machine: rules table, engine, constants
+      applications/         list/read/submit + serializer (the JSON contract)
+      interviews/ evaluations/ approvals/ offers/ onboarding/
+prisma/schema.prisma      SRS section 4.2 entities
+scripts/                  smoke.sh, cleanup-test-data.ts
 ```
 
 Flow of a request: **routes** (auth + role gate + validation) -> **controller**
@@ -96,7 +99,7 @@ Auth.js: `GET /auth/csrf`, `POST /auth/callback/credentials`,
 | `GET /accounts/me` | any signed-in user |
 | `GET /accounts/panelists` | HR, Admin |
 | `GET/POST /users`, `PATCH /users/:id` | Admin |
-| `GET /jobs/public` | public (open vacancies for the landing page; no internal fields) |
+| `GET /jobs/public`, `GET /jobs/public/:id` | public (open vacancies for the landing page and job pages; no internal fields; 404 once closed) |
 | `GET /jobs`, `GET /jobs/:id` | any (candidates see open vacancies only) |
 | `POST /jobs`, `PATCH /jobs/:id` | HR, Admin |
 | `GET /applications`, `GET /applications/:id` | any, scoped by role |

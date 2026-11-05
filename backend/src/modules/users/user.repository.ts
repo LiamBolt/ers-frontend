@@ -1,4 +1,4 @@
-import { prisma } from "../../db";
+import { prisma } from "../../database";
 import { publicUserSelect } from "../accounts/account.repository";
 import type { UpdateUserInput } from "./user.schema";
 

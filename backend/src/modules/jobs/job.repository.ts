@@ -1,4 +1,4 @@
-import { prisma } from "../../db";
+import { prisma } from "../../database";
 import { JobStatus } from "@prisma/client";
 import type { CreateJobInput } from "./job.schema";
 

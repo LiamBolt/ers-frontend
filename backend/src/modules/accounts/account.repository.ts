@@ -1,4 +1,4 @@
-import { prisma } from "../../db";
+import { prisma } from "../../database";
 import { UserRole } from "@prisma/client";
 
 export const publicUserSelect = { id: true, email: true, name: true, phone: true, role: true, status: true, createdAt: true } as const;

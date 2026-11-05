@@ -2,7 +2,7 @@
 // (users whose email starts with "smoke-" or "uitest-", and all their data).
 // Never touches real accounts. Usage: npx tsx scripts/cleanup-test-data.ts
 import "../src/config/env";
-import { prisma } from "../src/db";
+import { prisma } from "../src/database";
 
 const prefixes = ["smoke-", "uitest-"];
 

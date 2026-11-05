@@ -2,7 +2,7 @@ import type { ExpressAuthConfig } from "@auth/express";
 import Credentials from "@auth/express/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { prisma } from "../db";
+import { prisma } from "../database";
 import { env } from "../config/env";
 
 const credentialsSchema = z.object({ email: z.string().email(), password: z.string().min(1) });

@@ -1,4 +1,4 @@
-import { prisma } from "../../db";
+import { prisma } from "../../database";
 
 export const list = (userId: string) =>
   prisma.notification.findMany({ where: { recipientId: userId }, orderBy: { sentAt: "desc" }, take: 50 });

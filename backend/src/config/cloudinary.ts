@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import { httpError } from "../utils/http";
+import { httpError } from "../common/http";
 
 // Reads CLOUDINARY_URL (cloudinary://key:secret@cloud) from the environment.
 cloudinary.config({ secure: true });

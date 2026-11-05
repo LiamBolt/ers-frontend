@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "Employee Recruitment System API",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "seed": "tsx src/db/seed.ts",
+    "start": "node dist/server.js",
+    "seed": "tsx src/database/seeds/admin.seed.ts",
     "typecheck": "tsc --noEmit",
-    "seed:jobs": "tsx src/db/seed-jobs.ts"
+    "seed:jobs": "tsx src/database/seeds/jobs.seed.ts"
   },
   "license": "ISC",
   "dependencies": {

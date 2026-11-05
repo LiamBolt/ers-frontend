@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import { httpError } from "../../utils/http";
-import { audit } from "../../utils/audit";
-import { prisma } from "../../db";
+import { httpError } from "../../common/http";
+import { audit } from "../../common/audit";
+import { prisma } from "../../database";
 import * as accounts from "../accounts/account.repository";
 import * as repo from "./user.repository";
 import type { CreateUserInput, UpdateUserInput } from "./user.schema";
