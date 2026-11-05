@@ -7,9 +7,9 @@ import { evaluatedBy, needsAction } from '../lib/interviewGroups'
 
 // One scheduled interview, with the action that makes sense for the signed-in role.
 export default function InterviewCard({ application: a, user, onOpen }) {
-  const evaluationDue = user.role === 'INTERVIEWER' && a.state === 'UNDER_EVALUATION' && !evaluatedBy(a, user.id)
+  const evaluationDue = (user.role === 'INTERVIEWER' || a.interview.panel.some((p) => p.id === user.id)) && a.state === 'UNDER_EVALUATION' && !evaluatedBy(a, user.id)
   const completed = a.interview.status === 'COMPLETED'
-  const label = evaluationDue ? 'Evaluate' : user.role === 'HR_OFFICER' && a.state === 'INTERVIEW_SCHEDULED' ? 'Review / complete' : 'View'
+  const label = evaluationDue ? 'Evaluate' : (user.role === 'HR_OFFICER' || user.role === 'ADMIN') && a.state === 'INTERVIEW_SCHEDULED' ? 'Review / complete' : 'View'
 
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-ers-line bg-ers-surface p-4">

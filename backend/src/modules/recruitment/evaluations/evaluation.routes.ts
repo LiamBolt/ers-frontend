@@ -5,6 +5,6 @@ import { evaluationSchema } from "./evaluation.schema";
 import * as controller from "./evaluation.controller";
 
 const router = Router({ mergeParams: true });
-router.post("/", requireRole("INTERVIEWER"), validate(evaluationSchema), controller.submit);
+router.post("/", requireRole("INTERVIEWER", "ADMIN"), validate(evaluationSchema), controller.submit);
 
 export default router;

@@ -15,7 +15,7 @@ export function nextAction(app, user) {
   const isAdmin = user.role === 'ADMIN'
 
   if (app.state === 'UNDER_EVALUATION') {
-    if (role === 'INTERVIEWER') {
+    if (role === 'INTERVIEWER' || (isAdmin && app.interview.panel.some((p) => p.id === user.id))) {
       const onPanel = app.interview?.panel.some((p) => p.id === user.id)
       const done = app.evaluations.some((e) => e.panelistId === user.id)
       return onPanel && !done ? 'Submit your evaluation' : ''

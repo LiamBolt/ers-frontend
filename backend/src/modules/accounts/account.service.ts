@@ -16,4 +16,4 @@ export async function me(userId: string) {
   return user;
 }
 
-export const listPanelists = () => repo.listActiveByRole("INTERVIEWER");
+export const listPanelists = () => repo.listActiveByRoles(["INTERVIEWER", "ADMIN"]) // the administrator can sit on a panel too;

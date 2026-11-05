@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -38,8 +39,12 @@ export default function ScheduleInterviewForm({ onSubmit, withNote = false, onCa
         <div className="space-y-2">
           {isLoading && <p className="text-sm text-ers-ink-soft">Loading panel members…</p>}
           {!isLoading && panelists.length === 0 && (
-            <p className="text-sm text-ers-ink-soft">No interview panel members are registered yet. Ask an administrator to create some.</p>
+            <p className="text-sm text-ers-ink-soft">No panel members are available yet.</p>
           )}
+          <p className="text-xs text-ers-ink-soft">
+            Administrators can sit on a panel. To add more panel members,{' '}
+            <Link to="/users" className="font-semibold text-ers-primary underline">create accounts with the Interviewer role</Link>.
+          </p>
           {panelists.map((p) => (
             <label key={p.id} className="flex items-center gap-2 text-sm text-ers-ink">
               <input type="checkbox" value={p.id} className="accent-[var(--ers-primary)]" {...register('panel')} />

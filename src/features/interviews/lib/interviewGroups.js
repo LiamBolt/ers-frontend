@@ -3,6 +3,10 @@
 export const evaluatedBy = (application, userId) => application.evaluations.some((e) => e.panelistId === userId)
 
 export function needsAction(application, user) {
+  const onPanel = application.interview?.panel.some((p) => p.id === user.id)
+  if (user.role === 'ADMIN') {
+    return application.state === 'INTERVIEW_SCHEDULED' || (onPanel && application.state === 'UNDER_EVALUATION' && !evaluatedBy(application, user.id))
+  }
   if (user.role === 'INTERVIEWER') return application.state === 'UNDER_EVALUATION' && !evaluatedBy(application, user.id)
   if (user.role === 'HR_OFFICER') return application.state === 'INTERVIEW_SCHEDULED'
   return false

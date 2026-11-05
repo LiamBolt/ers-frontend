@@ -10,5 +10,8 @@ export const createUser = (data: { email: string; name: string; phone?: string; 
 
 export const findById = (id: string) => prisma.user.findUnique({ where: { id }, select: publicUserSelect });
 
+export const listActiveByRoles = (roles: UserRole[]) =>
+  prisma.user.findMany({ where: { role: { in: roles }, status: "ACTIVE" }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } });
+
 export const listActiveByRole = (role: UserRole) =>
   prisma.user.findMany({ where: { role, status: "ACTIVE" }, select: { id: true, name: true, email: true }, orderBy: { name: "asc" } });

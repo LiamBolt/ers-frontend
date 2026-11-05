@@ -18,7 +18,7 @@ export default function InterviewsPage() {
   const [openId, setOpenId] = useState(null)
 
   const isPanel = user.role === 'INTERVIEWER'
-  const isHR = user.role === 'HR_OFFICER'
+  const isHR = user.role === 'HR_OFFICER' || user.role === 'ADMIN'
 
   const interviews = applications
     .filter((a) => a.interview)

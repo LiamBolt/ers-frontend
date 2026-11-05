@@ -16,7 +16,7 @@ export async function schedule(user: User, id: string, input: ScheduleInput) {
 
   // FR-06: an interview cannot be assigned to an unregistered panel member.
   const panelists = await prisma.user.findMany({
-    where: { id: { in: input.panel }, role: "INTERVIEWER", status: "ACTIVE" },
+    where: { id: { in: input.panel }, role: { in: ["INTERVIEWER", "ADMIN"] }, status: "ACTIVE" },
     select: { id: true },
   });
   if (panelists.length !== new Set(input.panel).size)

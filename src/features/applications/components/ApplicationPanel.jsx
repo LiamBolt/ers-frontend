@@ -83,7 +83,7 @@ export default function ApplicationPanel({ appId, onClose }) {
         <MoveForm key={move.to} move={move} actions={actions} act={act} onDone={() => setMove(null)} onCancel={() => setMove(null)} />
       )}
       {isStaff && !move && <StageMoveBar app={app} onPick={setMove} />}
-      {isPanel && app.state === 'UNDER_EVALUATION' && mine && !alreadyEvaluated && <EvaluationSection {...shared} />}
+      {(isPanel || role === 'ADMIN') && app.state === 'UNDER_EVALUATION' && mine && !alreadyEvaluated && <EvaluationSection {...shared} />}
       {isPanel && mine && app.state === 'UNDER_EVALUATION' && <SelectionSection {...shared} />}
       {(isManager || role === 'ADMIN') && awaitingDecision && <DecisionSection {...shared} />}
       {isStaff && approvedAwaitingOffer && <OfferFormSection {...shared} />}
