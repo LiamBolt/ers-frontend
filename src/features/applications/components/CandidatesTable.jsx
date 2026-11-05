@@ -5,11 +5,18 @@ import { nextAction } from '../lib/nextAction'
 import StateBadge from './StateBadge'
 
 // One row per application; clicking a row (or the name) opens it.
-export default function CandidatesTable({ applications, user, onOpen }) {
+export default function CandidatesTable({ applications, user, onOpen, selectedIds, onToggle, onToggleAll }) {
+  const selectable = !!onToggle
+  const allSelected = selectable && applications.length > 0 && applications.every((a) => selectedIds.has(a.id))
   return (
     <Table>
       <thead>
         <tr>
+          {selectable && (
+            <Th className="w-10">
+              <input type="checkbox" aria-label="Select all shown" className="accent-[var(--ers-primary)]" checked={allSelected} onChange={() => onToggleAll(!allSelected)} />
+            </Th>
+          )}
           <Th>Candidate</Th>
           <Th>Vacancy</Th>
           <Th>Stage</Th>
@@ -22,6 +29,11 @@ export default function CandidatesTable({ applications, user, onOpen }) {
           const action = nextAction(a, user)
           return (
             <tr key={a.id} onClick={() => onOpen(a.id)} className="cursor-pointer hover:bg-ers-primary/5">
+              {selectable && (
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <input type="checkbox" aria-label={`Select ${a.candidateName}`} className="accent-[var(--ers-primary)]" checked={selectedIds.has(a.id)} onChange={() => onToggle(a.id)} />
+                </td>
+              )}
               <td className="px-4 py-3">
                 <button
                   className="text-left font-semibold text-ers-ink hover:text-ers-primary"

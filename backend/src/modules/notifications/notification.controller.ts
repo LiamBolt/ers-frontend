@@ -26,3 +26,12 @@ export const markAllRead: RequestHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+export const markRead: RequestHandler = async (req, res, next) => {
+  try {
+    await service.markRead(req.currentUser!.id, String(req.params.id));
+    send(res, null, "Notification marked as read");
+  } catch (err) {
+    next(err);
+  }
+};

@@ -1,4 +1,5 @@
 import { useDocumentTheme } from '@/shared/theme/ThemeContext'
+import NotificationBell from '@/features/notifications/components/NotificationBell'
 import MobileNav from './MobileNav'
 import Sidebar from './Sidebar'
 import { useSidebarCollapsed } from './useSidebarCollapsed'
@@ -32,12 +33,13 @@ export default function AppLayout({ title, subtitle, children }) {
         className={`relative min-h-screen bg-ers-surface pt-16 transition-[padding] duration-200 ease-out md:pt-0 ${collapsed ? 'md:pl-16' : 'md:pl-64'}`}
       >
         <div className="w-full px-4 py-8 sm:px-6 md:py-10 lg:px-8 xl:px-10">
-          {(title || subtitle) && (
-            <header className="mb-8">
+          <header className="mb-8 flex items-start justify-between gap-4">
+            <div className="min-w-0">
               {title && <h1 className="text-display text-ers-ink">{title}</h1>}
               {subtitle && <p className="mt-1 text-ers-ink-soft">{subtitle}</p>}
-            </header>
-          )}
+            </div>
+            <NotificationBell />
+          </header>
           {children}
         </div>
       </main>

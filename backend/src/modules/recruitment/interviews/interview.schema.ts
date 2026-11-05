@@ -4,6 +4,7 @@ import { z } from "zod";
 export const scheduleSchema = z.object({
   date: z.coerce.date().refine((d) => d > new Date(), "Pick a time in the future"),
   location: z.string().trim().min(3, "Enter a location or meeting link"),
+  note: z.string().trim().max(1000).default(""),
   panel: z.array(z.string().uuid()).min(1, "Assign at least one panel member"),
 });
 export type ScheduleInput = z.infer<typeof scheduleSchema>;

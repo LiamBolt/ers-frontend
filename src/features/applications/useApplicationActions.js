@@ -22,12 +22,12 @@ export function useApplicationActions(id) {
 
   return {
     isPending: mutation.isPending,
-    startScreening: () => run('/transition', { to: 'UNDER_SCREENING' }),
+    startScreening: (note = '') => run('/transition', { to: 'UNDER_SCREENING', note }),
     shortlist: (note = '') => run('/transition', { to: 'SHORTLISTED', note }),
     reject: (note) => run('/transition', { to: 'REJECTED', note }),
     select: (note = '') => run('/transition', { to: 'SELECTED', note }),
     scheduleInterview: (data) => run('/interview', data),
-    completeInterview: () => run('/interview/complete'),
+    completeInterview: (note = '') => run('/interview/complete', { note }),
     submitEvaluation: (scores) => run('/evaluations', scores),
     decide: (decision, note = '') => run('/approval', { decision, note }),
     sendOffer: (offer) => run('/offer', offer),

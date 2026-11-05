@@ -8,5 +8,6 @@ router.use(requireAuth);
 router.get("/", controller.list);
 router.get("/count", controller.count);
 router.post("/mark-all-read", controller.markAllRead);
+router.post("/:id/read", controller.markRead);
 
 export default router;

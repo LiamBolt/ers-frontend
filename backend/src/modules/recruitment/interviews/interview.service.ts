@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { prisma } from "../../../database";
 import { httpError } from "../../../common/http";
-import { notify } from "../../../common/notify";
+import { notify, withNote } from "../../../common/notify";
 import { moveState } from "../workflow/workflow.engine";
 import type { ScheduleInput } from "./interview.schema";
 
@@ -34,18 +34,19 @@ export async function schedule(user: User, id: string, input: ScheduleInput) {
     });
     const when = input.date.toLocaleString("en-GB");
     await notify(tx, panelists.map((p) => p.id), `You are on the panel for ${app.fullName} (${app.job.title}) on ${when}`, "INTERVIEW_ASSIGNED", "/interviews");
-    await notify(tx, [app.candidateId], `Your interview for ${app.job.title} is on ${when} at ${input.location}`, "INTERVIEW_SCHEDULED", "/");
+    await notify(tx, [app.candidateId], withNote(`Your interview for ${app.job.title} is on ${when} at ${input.location}`, input.note), "INTERVIEW_SCHEDULED", "/");
   });
 }
 
 // FR-07: the application moves to UNDER_EVALUATION once the interview is marked completed.
-export async function complete(user: User, id: string, _body?: unknown) {
+export async function complete(user: User, id: string, body?: { note?: string }) {
   const app = await load(id);
   if (!app.interview) throw httpError(409, "No interview scheduled.");
   await prisma.$transaction(async (tx) => {
     await moveState(tx, id, "UNDER_EVALUATION", { user }, "Interview completed");
     await tx.interview.update({ where: { id: app.interview!.id }, data: { status: "COMPLETED" } });
     const panel = await tx.interviewPanelist.findMany({ where: { interviewId: app.interview!.id } });
+    await notify(tx, [app.candidateId], withNote(`Your interview for ${app.job.title} is complete and is now being evaluated`, body?.note), "INTERVIEW_COMPLETED", "/");
     await notify(tx, panel.map((p) => p.userId), `Please submit your evaluation for ${app.fullName}`, "EVALUATION_DUE", "/interviews");
   });
 }

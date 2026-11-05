@@ -10,3 +10,7 @@ export const countUnread = async (userId: string) => ({
 export async function markAllRead(userId: string) {
   await prisma.notification.updateMany({ where: { recipientId: userId, readAt: null }, data: { readAt: new Date() } });
 }
+
+export async function markRead(userId: string, id: string) {
+  await prisma.notification.updateMany({ where: { id, recipientId: userId, readAt: null }, data: { readAt: new Date() } });
+}

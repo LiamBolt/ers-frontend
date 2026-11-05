@@ -6,9 +6,8 @@ import StateBadge from './StateBadge'
 import StageTracker from './StageTracker'
 import HistoryTimeline from './HistoryTimeline'
 import { Section } from '@/features/applications/components/panel/PanelPrimitives'
-import ScreeningSection from '@/features/applications/components/panel/ScreeningSection'
-import ScheduleSection from '@/features/applications/components/panel/ScheduleSection'
-import InterviewCompleteSection from '@/features/applications/components/panel/InterviewCompleteSection'
+import StageMoveBar from '@/features/applications/components/panel/StageMoveBar'
+import MoveForm from '@/features/applications/components/panel/MoveForm'
 import EvaluationSection from '@/features/applications/components/panel/EvaluationSection'
 import SelectionSection from '@/features/applications/components/panel/SelectionSection'
 import DecisionSection from '@/features/applications/components/panel/DecisionSection'
@@ -18,6 +17,7 @@ import { CandidateDetails, InterviewDetails, EvaluationDetails, ApprovalDetails,
 import { useAuth } from '@/features/auth/AuthContext'
 import { useApplication } from '@/features/applications/hooks'
 import { useApplicationActions } from '@/features/applications/useApplicationActions'
+import { STAFF_ROLES, movesFrom, findMove } from '@/features/applications/lib/moves'
 import { fmtDate } from '@/shared/lib/format'
 import ErrorState from '@/shared/ui/ErrorState'
 
@@ -30,6 +30,7 @@ export default function ApplicationPanel({ appId, onClose }) {
   const actions = useApplicationActions(appId)
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [move, setMove] = useState(null) // the stage move being confirmed
 
   const act = async (fn) => {
     try {
@@ -51,6 +52,7 @@ export default function ApplicationPanel({ appId, onClose }) {
 
   const role = user.role
   const isHR = role === 'HR_OFFICER'
+  const isStaff = STAFF_ROLES.includes(role) // HR officers and admins move applications on
   const isPanel = role === 'INTERVIEWER'
   const isManager = role === 'MANAGER'
   const mine = app.interview?.panel.some((p) => p.id === user.id)
@@ -68,7 +70,7 @@ export default function ApplicationPanel({ appId, onClose }) {
         {actions.isPending && <Loader2 size={16} className="animate-spin text-ers-primary" aria-label="Saving" />}
       </div>
 
-      <StageTracker app={app} />
+      <StageTracker app={app} moves={isStaff ? movesFrom(app.state) : []} onSelect={isStaff ? setMove : undefined} />
 
       {error && (
         <div role="alert" className="flex items-start gap-2 rounded-xl bg-ers-danger/10 text-ers-danger text-sm p-3 animate-slide-down">
@@ -78,11 +80,12 @@ export default function ApplicationPanel({ appId, onClose }) {
       )}
 
       {/* ---- actions for this role at this stage ---- */}
-      {isHR && ['SUBMITTED', 'UNDER_SCREENING'].includes(app.state) && <ScreeningSection {...shared} />}
-      {isHR && app.state === 'SHORTLISTED' && <ScheduleSection {...shared} />}
-      {isHR && app.state === 'INTERVIEW_SCHEDULED' && <InterviewCompleteSection {...shared} />}
+      {isStaff && move && findMove(app.state, move.to) && (
+        <MoveForm key={move.to} move={move} actions={actions} act={act} onDone={() => setMove(null)} onCancel={() => setMove(null)} />
+      )}
+      {isStaff && !move && <StageMoveBar app={app} onPick={setMove} />}
       {isPanel && app.state === 'UNDER_EVALUATION' && mine && !alreadyEvaluated && <EvaluationSection {...shared} />}
-      {(isHR || (isPanel && mine)) && app.state === 'UNDER_EVALUATION' && <SelectionSection {...shared} />}
+      {isPanel && mine && app.state === 'UNDER_EVALUATION' && <SelectionSection {...shared} />}
       {isManager && awaitingDecision && <DecisionSection {...shared} />}
       {isHR && approvedAwaitingOffer && <OfferFormSection {...shared} />}
       {isHR && app.state === 'OFFER_SENT' && <OfferResponseSection {...shared} />}

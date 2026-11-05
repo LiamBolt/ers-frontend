@@ -3,21 +3,23 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Input from '@/shared/ui/Input'
 import Button from '@/shared/ui/Button'
+import TextArea from '@/shared/ui/TextArea'
 import { usePanelists } from '@/features/interviews/hooks'
 
 const schema = z.object({
   date: z.string().min(1, 'Choose a date and time').refine((v) => new Date(v) > new Date(), 'Pick a time in the future'),
   location: z.string().min(3, 'Enter a location or meeting link'),
   panel: z.array(z.string()).min(1, 'Assign at least one panel member'),
+  note: z.string().max(1000).optional(),
 })
 
-export default function ScheduleInterviewForm({ onSubmit }) {
+export default function ScheduleInterviewForm({ onSubmit, withNote = false, onCancel }) {
   const { data: panelists = [], isLoading } = usePanelists()
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema), defaultValues: { date: '', location: '', panel: [] } })
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { date: '', location: '', panel: [], note: '' } })
 
   return (
     <form
@@ -47,7 +49,13 @@ export default function ScheduleInterviewForm({ onSubmit }) {
         </div>
         {errors.panel && <p className="text-xs text-ers-danger mt-1">{errors.panel.message}</p>}
       </fieldset>
-      <Button type="submit">Schedule interview</Button>
+      {withNote && (
+        <TextArea label="Note to the candidate (optional)" rows={2} hint="Shown in their notification, e.g. what to bring." {...register('note')} />
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit">Schedule interview</Button>
+        {onCancel && <Button variant="ghost" onClick={onCancel}>Cancel</Button>}
+      </div>
     </form>
   )
 }

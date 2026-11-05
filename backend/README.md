@@ -104,13 +104,13 @@ Auth.js: `GET /auth/csrf`, `POST /auth/callback/credentials`,
 | `POST /jobs`, `PATCH /jobs/:id` | HR, Admin |
 | `GET /applications`, `GET /applications/:id` | any, scoped by role |
 | `POST /applications` (multipart, field `cv`) | Candidate |
-| `POST /applications/:id/transition` `{to,note}` | HR, Panel (screen, shortlist, reject, select) |
-| `POST /applications/:id/interview` / `.../interview/complete` | HR |
+| `POST /applications/:id/transition` `{to,note}` | HR, Admin, Panel (screen, shortlist, reject, select) |
+| `POST /applications/:id/interview` / `.../interview/complete` | HR, Admin (`note` is optional and is shown to the candidate) |
 | `POST /applications/:id/evaluations` | Panel (assigned only) |
 | `POST /applications/:id/approval` `{decision,note}` | Manager |
 | `POST /applications/:id/offer` / `.../offer/response` | HR / HR or the Candidate |
 | `POST /applications/:id/onboarding/{documents,confirmations,complete}` | HR, Admin (Manager: Department confirmation) |
-| `GET /notifications`, `/notifications/count`, `POST /notifications/mark-all-read` | any |
+| `GET /notifications`, `/notifications/count`, `POST /notifications/mark-all-read`, `POST /notifications/:id/read` | any |
 | `GET /reports/summary?from&to&department&jobId` | Manager, Admin |
 
 Responses: `{ success, message, data }`. Errors: `{ success:false, message }`,

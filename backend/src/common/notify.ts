@@ -17,3 +17,6 @@ export async function idsWithRole(tx: Prisma.TransactionClient, role: "HR_OFFICE
   const users = await tx.user.findMany({ where: { role, status: "ACTIVE" }, select: { id: true } });
   return users.map((u) => u.id);
 }
+
+/** Candidate-facing message: the default wording plus the staff member's optional note. */
+export const withNote = (message: string, note?: string) => (note?.trim() ? `${message}. Note from the team: ${note.trim()}` : message);
