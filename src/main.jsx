@@ -1,10 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import App from './App.jsx'
-import { ThemeProvider } from './context/ThemeContext'
-import ErrorBoundary from './components/ErrorBoundary'
-import './index.css'
+import App from '@/app/App'
+import { ThemeProvider } from '@/shared/theme/ThemeContext'
+import ErrorBoundary from '@/app/ErrorBoundary'
+import '@/styles/index.css'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15_000, refetchOnWindowFocus: true, retry: 1 } },
