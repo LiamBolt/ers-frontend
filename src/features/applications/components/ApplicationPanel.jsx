@@ -3,21 +3,16 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import Modal from '@/shared/ui/Modal'
 import Badge from '@/shared/ui/Badge'
 import StateBadge from './StateBadge'
-import StageTracker from './StageTracker'
+import StageProgress from './StageProgress'
 import HistoryTimeline from './HistoryTimeline'
+import Tabs from '@/shared/ui/Tabs'
 import { Section } from '@/features/applications/components/panel/PanelPrimitives'
-import StageMoveBar from '@/features/applications/components/panel/StageMoveBar'
-import MoveForm from '@/features/applications/components/panel/MoveForm'
-import EvaluationSection from '@/features/applications/components/panel/EvaluationSection'
-import SelectionSection from '@/features/applications/components/panel/SelectionSection'
-import DecisionSection from '@/features/applications/components/panel/DecisionSection'
-import { OfferFormSection, OfferResponseSection } from '@/features/applications/components/panel/OfferSections'
+import ActionCard from '@/features/applications/components/panel/ActionCard'
 import OnboardingSection from '@/features/applications/components/panel/OnboardingSection'
 import { CandidateDetails, InterviewDetails, EvaluationDetails, ApprovalDetails, OfferDetails } from '@/features/applications/components/panel/DetailSections'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useApplication } from '@/features/applications/hooks'
 import { useApplicationActions } from '@/features/applications/useApplicationActions'
-import { STAFF_ROLES, movesFrom, findMove } from '@/features/applications/lib/moves'
 import { fmtDate } from '@/shared/lib/format'
 import ErrorState from '@/shared/ui/ErrorState'
 
@@ -30,7 +25,7 @@ export default function ApplicationPanel({ appId, onClose }) {
   const actions = useApplicationActions(appId)
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
-  const [move, setMove] = useState(null) // the stage move being confirmed
+  const [tab, setTab] = useState(null) // null = the tab that matches the stage
 
   const act = async (fn) => {
     try {
@@ -50,15 +45,26 @@ export default function ApplicationPanel({ appId, onClose }) {
     )
   }
 
+  if (isLoading || loadError || !app) {
+    return (
+      <Modal open onClose={onClose} title={loadError ? 'Application unavailable' : 'Loading…'}>
+        {loadError ? <ErrorState error={loadError} onRetry={refetch} compact /> : <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />}
+      </Modal>
+    )
+  }
+
   const role = user.role
-  const isStaff = STAFF_ROLES.includes(role) // HR officers and admins move applications on
-  const isPanel = role === 'INTERVIEWER'
-  const isManager = role === 'MANAGER'
-  const mine = app.interview?.panel.some((p) => p.id === user.id)
-  const alreadyEvaluated = app.evaluations.some((e) => e.panelistId === user.id)
-  const awaitingDecision = app.state === 'PENDING_APPROVAL' && !app.approval
-  const approvedAwaitingOffer = app.state === 'PENDING_APPROVAL' && app.approval?.decision === 'APPROVED'
   const shared = { app, act, actions, note, setNote }
+
+  // Only the tabs that have something in them; the one matching the stage opens first.
+  const tabs = [
+    role !== 'INTERVIEWER' && { value: 'overview', label: 'Candidate' },
+    app.interview && { value: 'interview', label: 'Interview' },
+    (app.approval || app.offer || app.onboarding) && { value: 'decision', label: 'Approval & offer' },
+    { value: 'history', label: 'History' },
+  ].filter(Boolean)
+  const wanted = ['INTERVIEW_SCHEDULED', 'UNDER_EVALUATION'].includes(app.state) ? 'interview' : app.approval || app.offer || app.onboarding ? 'decision' : 'overview'
+  const current = tabs.some((t) => t.value === (tab ?? wanted)) ? tab ?? wanted : tabs[0].value
 
   return (
     <Modal open onClose={onClose} title={app.candidateName} subtitle={`${app.ref} · ${app.job.title} · ${app.job.department}`}>
@@ -69,7 +75,7 @@ export default function ApplicationPanel({ appId, onClose }) {
         {actions.isPending && <Loader2 size={16} className="animate-spin text-ers-primary" aria-label="Saving" />}
       </div>
 
-      <StageTracker app={app} moves={isStaff ? movesFrom(app.state) : []} onSelect={isStaff ? setMove : undefined} />
+      <StageProgress app={app} />
 
       {error && (
         <div role="alert" className="flex items-start gap-2 rounded-xl bg-ers-danger/10 text-ers-danger text-sm p-3 animate-slide-down">
@@ -78,28 +84,29 @@ export default function ApplicationPanel({ appId, onClose }) {
         </div>
       )}
 
-      {/* ---- actions for this role at this stage ---- */}
-      {isStaff && move && findMove(app.state, move.to) && (
-        <MoveForm key={move.to} move={move} actions={actions} act={act} onDone={() => setMove(null)} onCancel={() => setMove(null)} />
+      <ActionCard key={`${app.state}-${!!app.approval}-${app.evaluations.length}`} app={app} user={user} shared={shared} />
+
+      <Tabs options={tabs} value={current} onChange={setTab} ariaLabel="Application details" />
+
+      {current === 'overview' && <CandidateDetails app={app} />}
+      {current === 'interview' && (
+        <>
+          {app.interview && <InterviewDetails interview={app.interview} />}
+          {app.evaluations.length > 0 && <EvaluationDetails evaluations={app.evaluations} />}
+        </>
       )}
-      {isStaff && !move && <StageMoveBar app={app} onPick={setMove} />}
-      {(isPanel || role === 'ADMIN') && app.state === 'UNDER_EVALUATION' && mine && !alreadyEvaluated && <EvaluationSection {...shared} />}
-      {isPanel && mine && app.state === 'UNDER_EVALUATION' && <SelectionSection {...shared} />}
-      {(isManager || role === 'ADMIN') && awaitingDecision && <DecisionSection {...shared} />}
-      {isStaff && approvedAwaitingOffer && <OfferFormSection {...shared} />}
-      {isStaff && app.state === 'OFFER_SENT' && <OfferResponseSection {...shared} />}
-
-      {/* ---- record ---- */}
-      {role !== 'INTERVIEWER' && <CandidateDetails app={app} />}
-      {app.interview && <InterviewDetails interview={app.interview} />}
-      {app.evaluations.length > 0 && <EvaluationDetails evaluations={app.evaluations} />}
-      {app.approval && <ApprovalDetails approval={app.approval} />}
-      {app.offer && <OfferDetails offer={app.offer} />}
-      {app.onboarding && <OnboardingSection app={app} role={role} act={act} actions={actions} />}
-
-      <Section title="History">
-        <HistoryTimeline history={app.history} />
-      </Section>
+      {current === 'decision' && (
+        <>
+          {app.approval && <ApprovalDetails approval={app.approval} />}
+          {app.offer && <OfferDetails offer={app.offer} />}
+          {app.onboarding && <OnboardingSection app={app} role={role} act={act} actions={actions} />}
+        </>
+      )}
+      {current === 'history' && (
+        <Section title="History">
+          <HistoryTimeline history={app.history} />
+        </Section>
+      )}
     </Modal>
   )
 }
