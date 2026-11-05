@@ -14,7 +14,7 @@ frontend (repo root) and the Node.js API in `backend/` (read
 - React Router 7 (`react-router-dom`), `BrowserRouter`
 - Tailwind CSS 3 with CSS-variable colour tokens (`ers-*`, see below)
 - `react-hook-form` + `zod` (via `@hookform/resolvers`) for forms
-- `lucide-react` for icons, Bricolage Grotesque Variable for type
+- `lucide-react` for icons, Geist (variable, self-hosted via Fontsource) for type
 - TanStack Query v5 for all server state (no other client-side data store)
 - Deployed on Vercel; `vercel.json` rewrites every path to `/index.html` so
   client-side routes survive a refresh. Keep that rewrite. Production also
@@ -76,42 +76,111 @@ re-checked on the server for every request, so the route table below only
 hides what the API would refuse.
 
 **There is no dummy data anywhere.** Do not add seed records, fake users or
-mock arrays to the frontend or the backend seed (the seed creates one admin).
-Test data made while developing must be removed afterwards
+mock arrays to the frontend or the backend seed (`npm run seed` creates one
+admin). The one exception is `npm run seed:jobs`, which publishes the agency's
+real vacancies for the landing page; its list (`backend/src/db/seed-jobs.ts`)
+must be approved by the human before it is run against the live database, and
+it is idempotent. Test data made while developing must be removed afterwards
 (`backend/scripts/cleanup-test-data.ts`).
 
 Roles: `CANDIDATE`, `HR_OFFICER`, `INTERVIEWER`, `MANAGER`, `ADMIN`.
 
 | Route | Roles |
 |---|---|
+| `/` | visitors: the public landing page with open positions; signed-in users: their role-specific dashboard |
 | `/login`, `/register` | public (redirect to `/` when signed in) |
-| `/` | any signed-in user (role-specific dashboard) |
+| `/settings` | any signed-in user (appearance theme, account summary) |
 | `/vacancy` | `HR_OFFICER`, `ADMIN` |
 | `/candidate` | `CANDIDATE` (application form) |
 | `/candidates`, `/interviews` | `HR_OFFICER`, `INTERVIEWER`, `MANAGER`, `ADMIN` |
 | `/reports` | `MANAGER`, `ADMIN` |
+| `/users` | `ADMIN` (create staff accounts, change roles, deactivate) |
 
 - Add or change access by wrapping the route in `<ProtectedRoute
   allowedRoles={[...]} />` in `App.jsx`. Do not check roles inside pages
   (sections inside a stage panel may hide actions by role; the server decides).
 - An unauthorised role is redirected to `/`, not shown an error.
 
-## Styling rules
+## Design system
 
-- Colours come from CSS variables declared in `src/index.css` and exposed in
-  `tailwind.config.js` as `ers-bg`, `ers-surface`, `ers-ink`, `ers-ink-soft`,
-  `ers-line`, `ers-primary`, `ers-primary-ink`, `ers-accent`, `ers-danger`,
-  `ers-warning`. Use these (`text-ers-ink`, `border-ers-line`). Do not
-  hard-code hex values or reach for default Tailwind palette colours.
-- Type scale tokens: `text-display`, `text-h2`, `text-h3`, `text-body`,
-  `text-label`, `text-caption`.
-- Panels use the `glass-panel` utility class from `index.css`.
-- Use the primitives in `components/ui/` rather than raw `<input>`,
-  `<button>` etc. They are `forwardRef` components that take `label`,
-  `error`, `hint`, `required` and wire up `aria-invalid` / `aria-describedby`
-  — keep that accessibility wiring when editing them, and keep `forwardRef`
-  so `react-hook-form`'s `register` works.
-- Mobile first; the app shell must stay usable on a phone.
+Operate-mode product UI: calm, dense where useful, familiar patterns. Brand
+colour is used for actions, links and the current selection only, never as
+decoration. The standards below were set from an accessibility audit and from
+Anthropic's `frontend-design`, Impeccable, Vercel `web-design-guidelines` and
+`make-interfaces-feel-better` guidance.
+
+**Tokens** live in `src/index.css` as RGB channels (`--ers-primary-rgb: 194 60 20`)
+and are exposed in `tailwind.config.js` with `<alpha-value>`, so opacity classes
+work (`bg-ers-primary/10`). Never define a Tailwind colour as a plain
+`var(--hex)`: opacity utilities silently stop compiling. Restart the Vite dev
+server after editing `tailwind.config.js`.
+
+| Token | Use |
+|---|---|
+| `ers-bg`, `ers-surface` | page background, cards/panels/inputs |
+| `ers-ink`, `ers-ink-soft`, `ers-muted` | primary, secondary, placeholder/caption text |
+| `ers-line` | decorative dividers and card borders (not for input borders) |
+| `ers-primary`, `ers-primary-hover`, `ers-primary-ink` | actions and links, hover, text on primary |
+| `ers-accent`, `ers-danger`, `ers-warning` | success, error/destructive, attention |
+
+Rules:
+
+- **Contrast:** text pairings must be at least 4.5:1 and input borders at least
+  3:1. The tokens already meet this; do not lighten them, and do not put small
+  text on `ers-primary` tints other than `ers-primary` itself. Check new colours
+  before adding them.
+- No hard-coded hex or default Tailwind palette colours (`gray-*`, `white`,
+  `black`). No emoji or unicode glyphs as icons; icons come from `lucide-react`.
+- **Surfaces:** `surface-panel` is the one elevated container (solid, neutral
+  shadow). No decorative blur, glass, gradients, coloured glows or background
+  blobs. Use `shadow-card` / `shadow-pop`; shadows are neutral with an offset.
+- **Radius:** controls `rounded-lg`, cards `rounded-xl`, panels and modals
+  larger. Nested radius = outer radius minus padding.
+- **Type:** scale tokens `text-stat`, `text-display`, `text-h2`, `text-h3`,
+  `text-body`, `text-label`, `text-caption`. Use `tabular-nums` for numbers in
+  tables and stats. Headings use `text-wrap: balance` (set globally).
+- **Motion:** 150-250 ms, state only, never `transition-all` (list properties).
+  Press feedback is `active:scale-[0.96]`. No page-load choreography.
+- **Targets:** interactive controls are at least 40 px high (44 px on touch);
+  `Button size="sm"` is 36 px on desktop and 44 px on touch.
+- **States:** every interactive component has default, hover, focus-visible,
+  active, disabled and (where relevant) loading and error. Focus uses the global
+  `:focus-visible` ring; never remove an outline without a visible replacement.
+- **Loading and empty:** use `LoadingRows`/`Skeleton` for content that is
+  loading (not a spinner in the middle of a page) and `EmptyState` for empty
+  results; say what is missing and what to do. Use `Spinner` only for short
+  inline waits.
+- **Forms:** every input has a visible label, the right `type`, `autoComplete`
+  and `spellCheck={false}` for emails; errors are inline and name the fix.
+- **Destructive actions** need a second step (see `UserRow` deactivate) or an
+  undo; do not use `window.confirm`.
+- Mobile first; the shell must stay usable on a phone. Keep the skip link and
+  landmarks in `AppLayout`.
+- **Layout:** every dashboard page fills the whole content area (no width cap,
+  no centred narrow column). Lay wide forms out in columns instead. The desktop
+  sidebar is collapsible to an icon rail (state kept in `localStorage`).
+- **Themes:** light is the default for everyone. Dark mode is chosen on the
+  Settings page and applies **only inside dashboards**: `AppLayout` calls
+  `useDocumentTheme()`, public pages (landing, sign-in, register) never do and
+  are always light. Dark tokens live under `[data-theme="dark"]` in
+  `src/index.css`. Use `ers-sidebar`/`ers-sidebar-fg` for the navigation rail
+  and dark surfaces that must stay dark in both themes, and `ers-scrim` for
+  backdrops; never use `ers-ink` as a background colour (it flips in dark mode).
+- **Logo:** `src/components/brand/Logo.jsx` (variants `full`, `mark`, `icon`;
+  tone `dark`/`light`). Geometry lives only in `logoSvg.js`; after changing it
+  run `node scripts/build-logo.mjs` to regenerate `public/logo*.svg` and the
+  favicon. Do not add raster logos.
+- **Landing page:** `src/pages/LandingPage.jsx` and `src/components/landing/`.
+  Hero photo is `public/images/landing-hero-*` (optimised from the supplied
+  Pexels photo).
+
+Primitives in `src/components/ui/`: `Button` (variants `primary`, `secondary`,
+`danger`, `ghost`; sizes `md`, `sm`), `Input`, `Select`, `TextArea`,
+`SearchInput`, `Badge`, `Tabs`, `Modal` (focus trap, scroll lock, restores
+focus), `Table`/`Th`, `Skeleton`/`LoadingRows`, `EmptyState`, `Spinner`,
+`FileUpload`. Use them instead of raw elements, keep the `forwardRef` and
+`aria-invalid`/`aria-describedby` wiring, and extend a primitive rather than
+restyling one-offs with `!important` overrides.
 
 ## Conventions
 
@@ -128,8 +197,12 @@ Roles: `CANDIDATE`, `HR_OFFICER`, `INTERVIEWER`, `MANAGER`, `ADMIN`.
   `src/hooks/`, and invalidate the right query keys after mutations. The base
   URL is relative (`/api`) so the session cookie stays same-origin; override
   only with `VITE_API_URL`.
-- Mutations surface server messages: show `err.message` from `ApiError` in the
-  form, never a generic "something went wrong".
+- Errors: `ApiError` (src/api/client.js) carries `kind` (`network`, `unavailable`,
+  `server`, `auth`, `permission`, `notfound`, `limit`, `validation`) and a message
+  written for people; 5xx bodies are never shown. Show `err.message` in forms.
+  For failed data loads use `<ErrorState error onRetry={refetch} />`; never print
+  a raw status ("Request failed (500)"). Unknown routes render `NotFoundPage`
+  and render crashes are caught by `ErrorBoundary`; both use `StatusPage`.
 
 ## Git
 
