@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Briefcase, CalendarClock, ClipboardCheck, Users, Inbox, Loader2 } from 'lucide-react'
+import { ArrowRight, Briefcase, CalendarClock, ClipboardCheck, Users, Inbox } from 'lucide-react'
 import AppLayout from '../components/layout/AppLayout'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
@@ -11,16 +11,18 @@ import ApplicationPanel from '../components/recruitment/ApplicationPanel'
 import { useAuth } from '../context/AuthContext'
 import { useApplications } from '../hooks/queries'
 import { useApplicationActions } from '../hooks/useApplicationActions'
-import { CLOSED_STATES } from '../data/recruitment'
+import { CLOSED_STATES, ROLE_LABELS } from '../data/recruitment'
 import { fmtDate, fmtDateTime, fmtMoney } from '../utils/format'
+import { LoadingRows } from '../components/ui/Skeleton'
+import EmptyState from '../components/ui/EmptyState'
 
 function StatCard({ icon: Icon, label, value, to }) {
   const body = (
-    <div className="rounded-xl border border-ers-line bg-white/70 p-4 h-full transition-colors hover:border-ers-primary/40">
+    <div className="rounded-xl border border-ers-line bg-ers-surface p-4 h-full transition-colors hover:border-ers-primary/40">
       <div className="w-9 h-9 rounded-full bg-ers-primary/10 text-ers-primary flex items-center justify-center mb-3">
         <Icon size={18} />
       </div>
-      <p className="text-display text-ers-ink !text-3xl">{value}</p>
+      <p className="text-stat tabular-nums text-ers-ink">{value}</p>
       <p className="text-sm text-ers-ink-soft">{label}</p>
     </div>
   )
@@ -39,14 +41,14 @@ function ActionList({ title, items, empty, onOpen, to, toLabel }) {
         )}
       </div>
       {items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-ers-line p-6 text-center text-sm text-ers-ink-soft">{empty}</p>
+        <EmptyState title={empty} />
       ) : (
         <ul className="space-y-2">
           {items.map(({ app, job, hint }) => (
             <li key={app.id}>
               <button
                 onClick={() => onOpen(app.id)}
-                className="w-full text-left rounded-xl border border-ers-line bg-white/70 p-3 flex items-center justify-between gap-3 hover:border-ers-primary/40 transition-colors"
+                className="w-full text-left rounded-xl border border-ers-line bg-ers-surface p-3 flex items-center justify-between gap-3 hover:border-ers-primary/40 transition-colors"
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ers-ink truncate">{app.candidateName}</span>
@@ -87,7 +89,7 @@ function OfferResponse({ app }) {
       </p>
       <div className="flex gap-2">
         <Button isLoading={actions.isPending} onClick={() => respond('ACCEPTED')}>Accept offer</Button>
-        <Button variant="secondary" className="!text-ers-danger" disabled={actions.isPending} onClick={() => respond('DECLINED')}>Decline</Button>
+        <Button variant="danger" disabled={actions.isPending} onClick={() => respond('DECLINED')}>Decline</Button>
       </div>
       {error && <p role="alert" className="text-sm text-ers-danger">{error}</p>}
     </div>
@@ -97,7 +99,7 @@ function OfferResponse({ app }) {
 function CandidateDashboard() {
   const { data: mine = [], isLoading } = useApplications() // server returns only this candidate's applications
 
-  if (isLoading) return <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />
+  if (isLoading) return <LoadingRows rows={3} rowClassName="h-24" />
 
   if (!mine.length) {
     return (
@@ -115,7 +117,7 @@ function CandidateDashboard() {
       {mine.map((app) => {
         const job = app.job
         return (
-          <article key={app.id} className="rounded-xl border border-ers-line bg-white/70 p-5 space-y-5">
+          <article key={app.id} className="rounded-xl border border-ers-line bg-ers-surface p-5 space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <h2 className="text-h3 text-ers-ink">{job?.title}</h2>
@@ -166,7 +168,7 @@ function StaffDashboard({ role, onOpen }) {
   const open = applications.filter((a) => !CLOSED_STATES.includes(a.state))
   const count = (...states) => applications.filter((a) => states.includes(a.state)).length
 
-  if (isLoading) return <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />
+  if (isLoading) return <LoadingRows rows={3} rowClassName="h-24" />
 
   if (role === 'HR_OFFICER') {
     const toScreen = applications.filter((a) => ['SUBMITTED', 'UNDER_SCREENING'].includes(a.state))
@@ -255,9 +257,9 @@ export default function DashboardPage() {
   const subtitle = `Welcome back, ${user?.name || 'User'}`
 
   return (
-    <AppLayout title="Dashboard" subtitle={subtitle} wide>
+    <AppLayout title="Dashboard" subtitle={subtitle}>
       <div className="mb-6">
-        <Badge variant="primary">{user.role.replace('_', ' ')}</Badge>
+        <Badge variant="primary">{ROLE_LABELS[user.role]}</Badge>
       </div>
       {user.role === 'CANDIDATE' ? <CandidateDashboard /> : <StaffDashboard role={user.role} onOpen={setOpenId} />}
       {openId && <ApplicationPanel appId={openId} onClose={() => setOpenId(null)} />}

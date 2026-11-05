@@ -12,7 +12,7 @@ export default function DecisionSection({ act, actions, note, setNote }) {
         <NoteField label="Comment (required to reject)" value={note} onChange={setNote} />
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => act(() => actions.decide('APPROVED', note))}>Approve hire</Button>
-          <Button variant="secondary" className="!text-ers-danger" onClick={() => act(() => actions.decide('REJECTED', note))}>Reject</Button>
+          <Button variant="danger" onClick={() => act(() => actions.decide('REJECTED', note))}>Reject</Button>
         </div>
       </Card>
     </Section>

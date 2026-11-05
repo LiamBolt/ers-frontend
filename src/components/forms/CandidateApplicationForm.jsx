@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -65,6 +66,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
   const [submittedData, setSubmittedData] = useState(null)
   const [serverError, setServerError] = useState(null)
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const { data: jobs = [], isLoading: jobsLoading } = useJobs()
   const queryClient = useQueryClient()
   const mutation = useMutation({
@@ -93,6 +95,12 @@ export default function CandidateApplicationForm({ onSuccess }) {
       cv: null,
     },
   })
+
+  // Arrived from "Apply" on the landing page: preselect that vacancy once the list is loaded.
+  const wantedJob = searchParams.get('job')
+  useEffect(() => {
+    if (wantedJob && jobs.some((j) => j.id === wantedJob)) setValue('jobId', wantedJob)
+  }, [wantedJob, jobs, setValue])
 
   const qualificationsArray = useFieldArray({ control, name: 'qualifications' })
   const experienceArray = useFieldArray({ control, name: 'experience' })
@@ -151,7 +159,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8" noValidate>
+    <form onSubmit={handleSubmit(onSubmit, onError)} className="grid items-start gap-x-12 gap-y-8 lg:grid-cols-2" noValidate>
       {/* Vacancy */}
       <section>
         <h2 className="text-h2 text-ers-ink mb-4">Vacancy</h2>
@@ -213,7 +221,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
       <section>
         <h2 className="text-h2 text-ers-ink mb-4">Qualifications</h2>
         {qualificationsArray.fields.map((field, index) => (
-          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-white/50">
+          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-ers-bg/40">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Qualification"
@@ -270,7 +278,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
           <p className="text-sm text-ers-ink-soft mb-2">No experience added — this is optional</p>
         )}
         {experienceArray.fields.map((field, index) => (
-          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-white/50">
+          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-ers-bg/40">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Years of Experience"
@@ -328,7 +336,7 @@ export default function CandidateApplicationForm({ onSuccess }) {
       <section>
         <h2 className="text-h2 text-ers-ink mb-4">References</h2>
         {referencesArray.fields.map((field, index) => (
-          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-white/50">
+          <div key={field.id} className="relative p-4 border border-ers-line rounded-xl mb-3 bg-ers-bg/40">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
                 label="Referee Name"
@@ -398,15 +406,17 @@ export default function CandidateApplicationForm({ onSuccess }) {
       </section>
 
       {serverError && (
-        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg" role="alert">
+        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg lg:col-span-2" role="alert">
           <AlertCircle size={16} />
           <span>{serverError}</span>
         </div>
       )}
 
-      <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
-        Submit application
-      </Button>
+      <div className="lg:col-span-2">
+        <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
+          Submit application
+        </Button>
+      </div>
     </form>
   )
 }

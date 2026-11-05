@@ -22,9 +22,9 @@ const Select = forwardRef(function Select(
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={`${error ? errorId : ''} ${hint ? hintId : ''}`.trim()}
           className={`
-            w-full appearance-none rounded-lg border bg-white/85 px-3 py-2 pr-10 text-sm text-ers-ink
-            focus:outline-none focus:ring-2 focus:ring-ers-primary/30 focus:border-ers-primary
-            ${error ? 'border-ers-danger focus:border-ers-danger focus:ring-ers-danger/20' : 'border-ers-line'}
+            min-h-10 w-full appearance-none rounded-lg border bg-ers-surface px-3 py-2 pr-10 text-sm text-ers-ink
+            transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-ers-primary/30 focus:border-ers-primary disabled:cursor-not-allowed disabled:bg-ers-ink/5 disabled:text-ers-muted
+            ${error ? 'border-ers-danger focus:border-ers-danger focus:ring-ers-danger/20' : 'border-ers-muted/70 hover:border-ers-muted'}
             ${className}
           `}
           {...props}

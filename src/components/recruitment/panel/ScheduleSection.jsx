@@ -10,7 +10,7 @@ export default function ScheduleSection({ act, actions, note, setNote }) {
         <ScheduleInterviewForm onSubmit={(data) => act(() => actions.scheduleInterview(data))} />
         <hr className="border-ers-line" />
         <NoteField required label="Reason (required to reject)" value={note} onChange={setNote} />
-        <Button variant="secondary" className="!text-ers-danger" onClick={() => act(() => actions.reject(note))}>Reject application</Button>
+        <Button variant="danger" onClick={() => act(() => actions.reject(note))}>Reject application</Button>
       </Card>
     </Section>
   )

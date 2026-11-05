@@ -26,7 +26,7 @@ export default function Tabs({ options, value, onChange, ariaLabel }) {
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="flex rounded-xl bg-ers-ink/5 p-1 gap-1 overflow-x-auto"
+      className="flex gap-1 overflow-x-auto rounded-xl bg-ers-ink/5 p-1"
     >
       {options.map((opt, index) => (
         <button
@@ -38,9 +38,9 @@ export default function Tabs({ options, value, onChange, ariaLabel }) {
           onClick={() => onChange(opt.value)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           className={`
-            flex-1 whitespace-nowrap px-3 py-2 text-xs font-semibold rounded-lg transition-colors
+            min-h-9 flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-150
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ers-primary
-            ${value === opt.value ? 'bg-white text-ers-primary shadow-sm' : 'text-ers-ink-soft hover:text-ers-ink'}
+            ${value === opt.value ? 'bg-ers-surface text-ers-primary shadow-card' : 'text-ers-ink-soft hover:bg-ers-surface/60 hover:text-ers-ink'}
           `}
         >
           {opt.label}

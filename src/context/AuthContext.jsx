@@ -40,9 +40,15 @@ export function AuthProvider({ children }) {
   )
 
   const logout = useCallback(async () => {
-    await authApi.signOut().catch(() => undefined)
-    queryClient.clear()
+    try {
+      await authApi.signOut()
+    } catch (err) {
+      console.error('Sign-out request failed', err)
+    }
+    // Do NOT call queryClient.clear(): it detaches the active session query, so the
+    // UI would never see the user disappear. Drop every other cached query instead.
     queryClient.setQueryData(SESSION_KEY, null)
+    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== SESSION_KEY[0] })
   }, [queryClient])
 
   return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>

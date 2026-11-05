@@ -2,9 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/logo.jpeg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ERS – Employee Recruitment System</title>
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Apply a saved dark theme before first paint, but only on dashboard routes.
+      // The landing page and the sign-in/register pages are always light.
+      try {
+        var p = location.pathname;
+        var isPublic = p === "/" || p === "/login" || p === "/register";
+        if (!isPublic && localStorage.getItem("ers_theme") === "dark") document.documentElement.dataset.theme = "dark";
+      } catch (e) {}
+    </script>
+    <title>ERS Recruit - Employee Recruitment System</title>
   </head>
   <body>
     <div id="root"></div>

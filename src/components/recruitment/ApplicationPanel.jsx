@@ -19,13 +19,14 @@ import { useAuth } from '../../context/AuthContext'
 import { useApplication } from '../../hooks/queries'
 import { useApplicationActions } from '../../hooks/useApplicationActions'
 import { fmtDate } from '../../utils/format'
+import ErrorState from '../ui/ErrorState'
 
 // Everything a staff member can see and do on one application. Which sections
 // show is driven by the application's state and the signed-in role; the server
 // enforces the same rules (BR-03), so this only hides what would be refused.
 export default function ApplicationPanel({ appId, onClose }) {
   const { user } = useAuth()
-  const { data: app, isLoading, error: loadError } = useApplication(appId)
+  const { data: app, isLoading, error: loadError, refetch } = useApplication(appId)
   const actions = useApplicationActions(appId)
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
@@ -42,8 +43,8 @@ export default function ApplicationPanel({ appId, onClose }) {
 
   if (isLoading || loadError || !app) {
     return (
-      <Modal open onClose={onClose} title={loadError ? 'Could not load application' : 'Loading…'}>
-        {loadError ? <p className="text-sm text-ers-danger">{loadError.message}</p> : <Loader2 className="animate-spin text-ers-primary" />}
+      <Modal open onClose={onClose} title={loadError ? 'Application unavailable' : 'Loading…'}>
+        {loadError ? <ErrorState error={loadError} onRetry={refetch} compact /> : <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />}
       </Modal>
     )
   }

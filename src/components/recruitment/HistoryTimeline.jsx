@@ -15,7 +15,7 @@ export default function HistoryTimeline({ history }) {
           />
           <p className="text-sm font-semibold text-ers-ink">{STATE_LABELS[h.state] || h.state}</p>
           {h.note && <p className="text-sm text-ers-ink-soft">{h.note}</p>}
-          <p className="text-caption text-ers-ink-soft/80">
+          <p className="text-caption text-ers-muted">
             {fmtDateTime(h.at)} · {h.by} ({ROLE_LABELS[h.role] || h.role})
           </p>
         </li>

@@ -24,6 +24,7 @@ const schema = z.object({
   ], { required_error: 'Please select a department' }),
   numberOfPositions: z.number().int('Must be a whole number').min(1, 'At least 1 position').max(50, 'Maximum 50 positions'),
   requiredSkills: z.string().min(10, 'Please describe required skills (min 10 characters)'),
+  description: z.string().max(5000, 'Keep the description under 5000 characters').optional(),
   closingDate: z.string().refine((dateStr) => {
     const date = new Date(dateStr)
     return date > today
@@ -52,6 +53,7 @@ export default function VacancyForm({ onSuccess }) {
       department: '',
       numberOfPositions: 1,
       requiredSkills: '',
+      description: '',
       closingDate: '',
     },
   })
@@ -64,6 +66,7 @@ export default function VacancyForm({ onSuccess }) {
         department: data.department,
         numPositions: data.numberOfPositions,
         requiredSkills: data.requiredSkills,
+        description: data.description?.trim() || undefined,
         closingDate: data.closingDate,
       })
     } catch (err) {
@@ -94,8 +97,8 @@ export default function VacancyForm({ onSuccess }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-      <div className="flex items-center gap-2 mb-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="grid items-start gap-x-8 gap-y-6 lg:grid-cols-2" noValidate>
+      <div className="flex items-center gap-2 lg:col-span-2">
         <Badge variant="default">ID: Auto-generated</Badge>
         <Badge variant="default">Created by: {user?.name}</Badge>
       </div>
@@ -127,8 +130,7 @@ export default function VacancyForm({ onSuccess }) {
         <option value="IT/Administration">IT/Administration</option>
       </Select>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Input
+      <Input
           label="Number of Positions"
           type="number"
           min="1"
@@ -137,14 +139,13 @@ export default function VacancyForm({ onSuccess }) {
           error={errors.numberOfPositions?.message}
           {...register('numberOfPositions', { valueAsNumber: true })}
         />
-        <Input
+      <Input
           label="Closing Date"
           type="date"
           required
           error={errors.closingDate?.message}
           {...register('closingDate')}
         />
-      </div>
 
       <TextArea
         label="Required Skills"
@@ -156,16 +157,27 @@ export default function VacancyForm({ onSuccess }) {
         {...register('requiredSkills')}
       />
 
+      <TextArea
+        label="Description"
+        rows={4}
+        placeholder="What the role involves, shown to candidates on the careers page"
+        hint="Optional"
+        error={errors.description?.message}
+        {...register('description')}
+      />
+
       {serverError && (
-        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg" role="alert">
+        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg lg:col-span-2" role="alert">
           <AlertCircle size={16} />
           <span>{serverError}</span>
         </div>
       )}
 
-      <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
-        Publish vacancy
-      </Button>
+      <div className="lg:col-span-2">
+        <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
+          Publish vacancy
+        </Button>
+      </div>
     </form>
   )
 }

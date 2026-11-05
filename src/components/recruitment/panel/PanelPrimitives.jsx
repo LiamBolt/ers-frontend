@@ -10,7 +10,7 @@ export function Section({ title, children }) {
 }
 
 export function Card({ children, className = '' }) {
-  return <div className={`rounded-xl border border-ers-line bg-white/70 p-4 ${className}`}>{children}</div>
+  return <div className={`rounded-xl border border-ers-line bg-ers-surface p-4 ${className}`}>{children}</div>
 }
 
 export function Row({ label, children }) {

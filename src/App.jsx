@@ -11,13 +11,16 @@ import DashboardPage from './pages/DashboardPage'
 import CandidatesPage from './pages/CandidatesPage'
 import InterviewsPage from './pages/InterviewsPage'
 import ReportsPage from './pages/ReportsPage'
+import UsersPage from './pages/UsersPage'
+import SettingsPage from './pages/SettingsPage'
+import LandingPage from './pages/LandingPage'
 
 function AppRoutes() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-ers-bg flex items-center justify-center">
+      <div className="min-h-screen bg-ers-surface flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-ers-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
@@ -36,10 +39,13 @@ function AppRoutes() {
         element={user ? <Navigate to="/" replace /> : <RegisterPage />}
       />
 
+      {/* Visitors see the landing page; signed-in users get their dashboard. */}
+      <Route path="/" element={user ? <DashboardPage /> : <LandingPage />} />
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         {/* Dashboard available to all logged in users */}
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         
         {/* Role-specific protected routes */}
         <Route element={<ProtectedRoute allowedRoles={['HR_OFFICER', 'ADMIN']} />}>
@@ -55,6 +61,10 @@ function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={['HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN']} />}>
           <Route path="/candidates" element={<CandidatesPage />} />
           <Route path="/interviews" element={<InterviewsPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route path="/users" element={<UsersPage />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']} />}>

@@ -4,9 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
+import Logo from '../brand/Logo'
 
 const schema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -20,6 +21,9 @@ export default function LoginForm() {
   
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const job = params.get('job') // set when the visitor clicked Apply on a vacancy
+  const withJob = (path) => (job ? `${path}?job=${encodeURIComponent(job)}` : path)
 
   const {
     register,
@@ -44,13 +48,13 @@ export default function LoginForm() {
       return
     }
     const homeByRole = { HR_OFFICER: '/vacancy', CANDIDATE: '/candidate' }
-    navigate(homeByRole[result.user.role] ?? '/')
+    navigate(job && result.user.role === 'CANDIDATE' ? withJob('/candidate') : homeByRole[result.user.role] ?? '/')
   }
 
   return (
-    <div className="glass-panel p-6 sm:p-8">
-      <div className="flex justify-center mb-6">
-        <img src="/logo.jpeg" alt="ERS Logo" className="w-16 h-16 rounded-xl object-cover shadow-sm" />
+    <div className="surface-panel p-6 sm:p-8">
+      <div className="mb-6 flex justify-center">
+        <Logo variant="full" className="h-24" />
       </div>
       <h1 className="text-2xl font-bold text-ers-ink mb-1 text-center">Sign in to ERS</h1>
       <p className="text-sm text-ers-ink-soft mb-6 text-center">Enter your email and password</p>
@@ -60,6 +64,8 @@ export default function LoginForm() {
           label="Email"
           type="email"
           placeholder="you@example.com"
+          autoComplete="email"
+          spellCheck={false}
           required
           error={errors.email?.message}
           {...register('email')}
@@ -69,13 +75,14 @@ export default function LoginForm() {
           label="Password"
           type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
+          autoComplete="current-password"
           required
           error={errors.password?.message}
           endNode={
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-ers-ink-soft hover:text-ers-ink p-1 focus:outline-none focus:text-ers-primary"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-ers-ink-soft transition-colors hover:text-ers-ink"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -108,7 +115,7 @@ export default function LoginForm() {
 
       <p className="text-sm text-ers-ink-soft text-center mt-6">
         New candidate?{' '}
-        <Link to="/register" className="text-ers-primary font-semibold hover:underline">
+        <Link to={withJob('/register')} className="text-ers-primary font-semibold hover:underline">
           Create an account
         </Link>
       </p>

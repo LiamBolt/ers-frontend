@@ -85,9 +85,9 @@ const FileUpload = forwardRef(function FileUpload(
         className={`
           flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors
           cursor-pointer
-          ${dragOver ? 'border-ers-primary bg-ers-primary/5' : 'border-ers-line hover:border-ers-primary/50'}
+          ${dragOver ? 'border-ers-primary bg-ers-primary/5' : 'border-ers-muted/60 hover:border-ers-primary/60'}
           ${error || internalError ? 'border-ers-danger bg-ers-danger/5' : ''}
-          bg-white/85
+          bg-ers-surface
         `}
       >
         <input

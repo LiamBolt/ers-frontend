@@ -1,71 +1,135 @@
 import { useState } from 'react'
-import { Menu, X, User, LogOut } from 'lucide-react'
+import {
+  Menu, X, LogOut, LayoutDashboard, FilePlus, Briefcase, Users, CalendarClock, BarChart3, UserCog,
+  Settings, PanelLeftClose, PanelLeftOpen,
+} from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useDocumentTheme } from '../../context/ThemeContext'
+import { ROLE_LABELS } from '../../data/recruitment'
+import Logo from '../brand/Logo'
+
+const ALL = ['CANDIDATE', 'HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN']
+const STAFF = ['HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN']
 
 const navItems = [
-  { label: 'Dashboard', href: '/', icon: null, roles: ['CANDIDATE', 'HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN'] },
-  { label: 'My Application', href: '/candidate', icon: null, roles: ['CANDIDATE'] },
-  { label: 'Create Vacancy', href: '/vacancy', icon: null, roles: ['HR_OFFICER', 'ADMIN'] },
-  { label: 'Candidates', href: '/candidates', icon: null, roles: ['HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN'] },
-  { label: 'Interviews', href: '/interviews', icon: null, roles: ['HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN'] },
-  { label: 'Reports', href: '/reports', icon: null, roles: ['MANAGER', 'ADMIN'] },
+  { label: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ALL },
+  { label: 'My Application', href: '/candidate', icon: FilePlus, roles: ['CANDIDATE'] },
+  { label: 'Create Vacancy', href: '/vacancy', icon: Briefcase, roles: ['HR_OFFICER', 'ADMIN'] },
+  { label: 'Candidates', href: '/candidates', icon: Users, roles: STAFF },
+  { label: 'Interviews', href: '/interviews', icon: CalendarClock, roles: STAFF },
+  { label: 'Reports', href: '/reports', icon: BarChart3, roles: ['MANAGER', 'ADMIN'] },
+  { label: 'Users', href: '/users', icon: UserCog, roles: ['ADMIN'] },
+  { label: 'Settings', href: '/settings', icon: Settings, roles: ALL },
 ]
 
-export default function AppLayout({ title, subtitle, wide = false, children }) {
+const COLLAPSE_KEY = 'ers_sidebar'
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Logo variant="mark" tone="light" className="h-8" />
+      <span className="text-lg font-semibold text-ers-sidebar-fg">ERS</span>
+    </div>
+  )
+}
+
+export default function AppLayout({ title, subtitle, children }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === 'collapsed'
+    } catch {
+      return false
+    }
+  })
   const { user, logout } = useAuth()
   const location = useLocation()
+  useDocumentTheme() // dark mode exists only inside dashboards
 
-  // Filter items based on user role
-  const allowedNavItems = navItems.filter(item => 
-    !item.roles || (user && item.roles.includes(user.role))
-  )
+  const allowedNavItems = navItems.filter((item) => user && item.roles.includes(user.role))
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="px-5 py-6 flex items-center gap-2">
-        <img src="/logo.jpeg" alt="ERS Logo" className="w-8 h-8 rounded-lg object-cover shadow-sm" />
-        <span className="text-white font-semibold text-lg">ERS</span>
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(COLLAPSE_KEY, c ? 'expanded' : 'collapsed')
+      } catch {
+        /* the choice just will not persist */
+      }
+      return !c
+    })
+  }
+
+  // `rail` = the icon-only desktop state. The mobile drawer is always expanded.
+  const renderSidebar = (rail) => (
+    <div className="flex h-full flex-col">
+      <div className={`flex ${rail ? 'flex-col items-center gap-3 px-2 py-5' : 'items-center justify-between px-5 py-6'}`}>
+        {rail ? <Logo variant="icon" tone="light" className="h-9" /> : <Brand />}
+        {!rail && (
+          <button
+            onClick={toggleCollapsed}
+            aria-label="Collapse sidebar"
+            aria-expanded="true"
+            aria-controls="app-sidebar"
+            className="hidden h-9 w-9 items-center justify-center rounded-lg text-ers-sidebar-fg/70 transition-colors hover:bg-ers-sidebar-fg/10 hover:text-ers-sidebar-fg md:flex"
+          >
+            <PanelLeftClose size={18} aria-hidden="true" />
+          </button>
+        )}
+        {rail && (
+          <button
+            onClick={toggleCollapsed}
+            aria-label="Expand sidebar"
+            aria-expanded="false"
+            aria-controls="app-sidebar"
+            title="Expand sidebar"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-ers-sidebar-fg/70 transition-colors hover:bg-ers-sidebar-fg/10 hover:text-ers-sidebar-fg"
+          >
+            <PanelLeftOpen size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
-      <nav className="flex-1 space-y-1 px-3">
-        {allowedNavItems.map((item) => {
-          const isActive = location.pathname === item.href || 
-                           (item.href !== '/' && location.pathname.startsWith(item.href))
+
+      <nav aria-label="Main" className={`flex-1 space-y-1 ${rail ? 'px-2' : 'px-3'}`}>
+        {allowedNavItems.map(({ label, href, icon: Icon }) => {
+          const isActive = location.pathname === href || (href !== '/' && location.pathname.startsWith(href))
           return (
             <Link
-              key={item.label}
-              to={item.href}
+              key={label}
+              to={href}
               onClick={() => setDrawerOpen(false)}
+              aria-current={isActive ? 'page' : undefined}
+              title={rail ? label : undefined}
               className={`
-                w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                transition-colors
+                flex min-h-10 w-full items-center rounded-lg text-sm font-medium transition-colors duration-150
+                ${rail ? 'justify-center' : 'gap-3 px-3'}
                 ${isActive
-                  ? 'text-ers-primary border-l-2 border-ers-primary bg-ers-primary/10'
-                  : 'text-gray-300 hover:bg-white/5 hover:text-white'}
+                  ? 'bg-ers-sidebar-fg/10 text-ers-sidebar-fg'
+                  : 'text-ers-sidebar-fg/70 hover:bg-ers-sidebar-fg/5 hover:text-ers-sidebar-fg'}
               `}
             >
-              {item.icon}
-              {item.label}
+              <Icon size={18} aria-hidden="true" />
+              {rail ? <span className="sr-only">{label}</span> : label}
             </Link>
           )
         })}
       </nav>
-      <div className="p-4 border-t border-white/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-300">
-            <User size={18} />
-            <div className="flex flex-col">
-              <span className="font-medium">{user?.name || 'User'}</span>
-              <span className="text-xs text-gray-500">{user?.role?.replace('_', ' ')}</span>
+
+      <div className="border-t border-ers-sidebar-fg/10 p-3">
+        <div className={`flex items-center ${rail ? 'justify-center' : 'justify-between gap-2 px-1'}`}>
+          {!rail && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-ers-sidebar-fg">{user?.name || 'User'}</p>
+              <p className="truncate text-xs text-ers-sidebar-fg/60">{ROLE_LABELS[user?.role] ?? user?.role}</p>
             </div>
-          </div>
-          <button 
+          )}
+          <button
             onClick={logout}
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5"
+            title={rail ? `Log out ${user?.name ?? ''}`.trim() : undefined}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-ers-sidebar-fg/70 transition-colors hover:bg-ers-sidebar-fg/10 hover:text-ers-sidebar-fg"
             aria-label="Log out"
           >
-            <LogOut size={18} />
+            <LogOut size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -73,45 +137,58 @@ export default function AppLayout({ title, subtitle, wide = false, children }) {
   )
 
   return (
-    <div className="min-h-screen bg-ers-bg">
-      <div className="bg-blobs" aria-hidden="true" />
+    <div className="min-h-screen bg-ers-surface">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-ers-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ers-primary focus:shadow-pop"
+      >
+        Skip to content
+      </a>
+
       {/* Mobile top bar */}
-      <div className="md:hidden bg-ers-ink text-white p-4 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
-        <div className="flex items-center gap-2">
-          <img src="/logo.jpeg" alt="ERS Logo" className="w-8 h-8 rounded-lg object-cover shadow-sm" />
-          <span className="font-semibold">ERS</span>
-        </div>
+      <div className="fixed left-0 right-0 top-0 z-40 flex items-center justify-between bg-ers-sidebar px-4 py-3 text-ers-sidebar-fg md:hidden">
+        <Brand />
         <button
           onClick={() => setDrawerOpen(!drawerOpen)}
-          className="p-1 rounded-lg hover:bg-white/10"
-          aria-label="Toggle navigation"
+          className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-ers-sidebar-fg/10"
+          aria-label={drawerOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={drawerOpen}
         >
-          {drawerOpen ? <X size={22} /> : <Menu size={22} />}
+          {drawerOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
         </button>
       </div>
+
       {/* Mobile drawer */}
       {drawerOpen && (
-        <div className="md:hidden fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}>
-          <div
-            className="w-64 h-full bg-ers-ink shadow-xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {sidebarContent}
+        <div className="fixed inset-0 z-30 bg-ers-scrim/50 md:hidden" onClick={() => setDrawerOpen(false)}>
+          <div className="flex h-full w-64 flex-col bg-ers-sidebar pt-14 shadow-pop" onClick={(e) => e.stopPropagation()}>
+            {renderSidebar(false)}
           </div>
         </div>
       )}
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 bg-ers-ink z-20 flex-col">
-        {sidebarContent}
+
+      {/* Desktop sidebar: full width or an icon rail */}
+      <aside
+        id="app-sidebar"
+        className={`fixed left-0 top-0 z-20 hidden h-screen flex-col bg-ers-sidebar transition-[width] duration-200 ease-out md:flex ${collapsed ? 'w-16' : 'w-64'}`}
+      >
+        {renderSidebar(collapsed)}
       </aside>
-      {/* Main content */}
-      <main className="md:pl-64 pt-16 md:pt-0 relative">
-        <div className={`${wide ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10`}>
-          <div className="glass-panel p-6 sm:p-8">
-            {title && <h1 className="text-display text-ers-ink mb-1">{title}</h1>}
-            {subtitle && <p className="text-ers-ink-soft mb-6">{subtitle}</p>}
-            {children}
-          </div>
+
+      <main
+        id="main"
+        className={`relative min-h-screen bg-ers-surface pt-16 transition-[padding] duration-200 ease-out md:pt-0 ${collapsed ? 'md:pl-16' : 'md:pl-64'}`}
+      >
+        {/* Every dashboard page fills the whole content area. Lay wide forms out in
+            columns instead of capping the width. */}
+        <div className={`w-full px-4 py-8 sm:px-6 md:py-10 lg:px-8 xl:px-10`}>
+          {(title || subtitle) && (
+            <header className="mb-8">
+              {title && <h1 className="text-display text-ers-ink">{title}</h1>}
+              {subtitle && <p className="mt-1 text-ers-ink-soft">{subtitle}</p>}
+            </header>
+          )}
+          {children}
         </div>
       </main>
     </div>

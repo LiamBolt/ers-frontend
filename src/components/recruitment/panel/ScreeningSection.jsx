@@ -12,7 +12,7 @@ export default function ScreeningSection({ app, act, actions, note, setNote }) {
             <Button variant="secondary" onClick={() => act(actions.startScreening)}>Start screening</Button>
           )}
           <Button onClick={() => act(() => actions.shortlist(note))}>Shortlist</Button>
-          <Button variant="secondary" className="!text-ers-danger" onClick={() => act(() => actions.reject(note))}>Reject</Button>
+          <Button variant="danger" onClick={() => act(() => actions.reject(note))}>Reject</Button>
         </div>
       </Card>
     </Section>

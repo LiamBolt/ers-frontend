@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarClock, MapPin, Users, Loader2 } from 'lucide-react'
+import { CalendarClock, MapPin, Users } from 'lucide-react'
 import AppLayout from '../components/layout/AppLayout'
 import Tabs from '../components/ui/Tabs'
 import Badge from '../components/ui/Badge'
@@ -9,6 +9,8 @@ import ApplicationPanel from '../components/recruitment/ApplicationPanel'
 import { useAuth } from '../context/AuthContext'
 import { useApplications } from '../hooks/queries'
 import { fmtDateTime } from '../utils/format'
+import { LoadingRows } from '../components/ui/Skeleton'
+import EmptyState from '../components/ui/EmptyState'
 
 export default function InterviewsPage() {
   const { user } = useAuth()
@@ -52,7 +54,6 @@ export default function InterviewsPage() {
     <AppLayout
       title="Interviews"
       subtitle={isPanel ? 'Your assigned interviews and pending evaluations' : 'Scheduled interviews and panel evaluations'}
-      wide
     >
       <div className="space-y-6">
         {isHR && toSchedule.length > 0 && (
@@ -61,12 +62,12 @@ export default function InterviewsPage() {
             <p className="text-sm text-ers-ink-soft mb-3">Shortlisted candidates still waiting for an interview slot.</p>
             <ul className="space-y-2">
               {toSchedule.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/70 border border-ers-line p-3">
+                <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg bg-ers-surface border border-ers-line p-3">
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-ers-ink truncate">{a.candidateName}</span>
                     <span className="block text-caption text-ers-ink-soft truncate">{a.job.title}</span>
                   </span>
-                  <Button className="!px-3 !py-1.5 !text-xs" onClick={() => setOpenId(a.id)}>Schedule</Button>
+                  <Button size="sm" onClick={() => setOpenId(a.id)}>Schedule</Button>
                 </li>
               ))}
             </ul>
@@ -76,18 +77,16 @@ export default function InterviewsPage() {
         <Tabs options={options} value={tab} onChange={setTab} ariaLabel="Filter interviews" />
 
         {isLoading ? (
-          <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />
+          <LoadingRows rows={3} rowClassName="h-40" />
         ) : list.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-ers-line p-8 text-center text-sm text-ers-ink-soft">
-            {tab === 'ACTION' ? 'Nothing needs your attention right now.' : 'No interviews in this view.'}
-          </p>
+          <EmptyState icon={CalendarClock} title={tab === 'ACTION' ? 'Nothing needs your attention' : 'No interviews in this view'}>{tab === 'ACTION' ? 'New interviews and evaluations will show up here.' : 'Switch tabs to see other interviews.'}</EmptyState>
         ) : (
           <ul className="grid md:grid-cols-2 gap-4">
             {list.map((a) => {
               const job = a.job
               const due = isPanel && a.state === 'UNDER_EVALUATION' && !mineDone(a)
               return (
-                <li key={a.id} className="rounded-xl border border-ers-line bg-white/70 p-4 flex flex-col gap-3">
+                <li key={a.id} className="rounded-xl border border-ers-line bg-ers-surface p-4 flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-ers-ink truncate">{a.candidateName}</p>
@@ -106,7 +105,7 @@ export default function InterviewsPage() {
                     </Badge>
                     <Button
                       variant={due || needsAction(a) ? 'primary' : 'secondary'}
-                      className="!px-3 !py-1.5 !text-xs"
+                      size="sm"
                       onClick={() => setOpenId(a.id)}
                     >
                       {due ? 'Evaluate' : isHR && a.state === 'INTERVIEW_SCHEDULED' ? 'Review / complete' : 'View'}

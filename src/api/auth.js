@@ -27,12 +27,13 @@ export async function signIn(email, password) {
 
 export async function signOut() {
   const csrf = await csrfToken()
-  await fetch(`${BASE}/auth/signout`, {
+  const res = await fetch(`${BASE}/auth/signout`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Auth-Return-Redirect': '1' },
     body: new URLSearchParams({ csrfToken: csrf }),
   })
+  if (!res.ok) throw new ApiError('Could not sign out. Try again.', res.status)
 }
 
 export const getMe = () => request('/accounts/me')

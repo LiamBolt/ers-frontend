@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Loader2 } from 'lucide-react'
+import { SearchX } from 'lucide-react'
 import AppLayout from '../components/layout/AppLayout'
 import Tabs from '../components/ui/Tabs'
 import Select from '../components/ui/Select'
@@ -9,6 +9,11 @@ import ApplicationPanel from '../components/recruitment/ApplicationPanel'
 import { useAuth } from '../context/AuthContext'
 import { useApplications, useJobs } from '../hooks/queries'
 import { fmtDate } from '../utils/format'
+import { Table, Th, tbodyClass } from '../components/ui/Table'
+import { LoadingRows } from '../components/ui/Skeleton'
+import EmptyState from '../components/ui/EmptyState'
+import SearchInput from '../components/ui/SearchInput'
+import ErrorState from '../components/ui/ErrorState'
 
 const GROUPS = [
   { value: 'ALL', label: 'All', states: null },
@@ -50,7 +55,7 @@ function nextAction(app, user) {
 
 export default function CandidatesPage() {
   const { user } = useAuth()
-  const { data: applications = [], isLoading, error: loadError } = useApplications()
+  const { data: applications = [], isLoading, error: loadError, refetch } = useApplications()
   const { data: jobs = [] } = useJobs()
   const [group, setGroup] = useState('ALL')
   const [jobId, setJobId] = useState('')
@@ -80,25 +85,12 @@ export default function CandidatesPage() {
           ? 'Candidates on your interview panels'
           : 'Every application and where it stands right now'
       }
-      wide
     >
       <div className="space-y-5">
         <Tabs options={options} value={group} onChange={setGroup} ariaLabel="Filter by stage group" />
 
         <div className="grid sm:grid-cols-[1fr_16rem] gap-3 items-end">
-          <div className="space-y-1.5">
-            <label htmlFor="cand-search" className="block text-sm font-semibold text-ers-ink">Search</label>
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ers-ink-soft" />
-              <input
-                id="cand-search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Name, email or application ID"
-                className="w-full rounded-lg border border-ers-line bg-white/85 pl-9 pr-3 py-2 text-sm text-ers-ink placeholder:text-ers-ink-soft/50 focus:outline-none focus:ring-2 focus:ring-ers-primary/30 focus:border-ers-primary"
-              />
-            </div>
-          </div>
+          <SearchInput id="cand-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name, email or application ID" />
           <Select label="Vacancy" value={jobId} onChange={(e) => setJobId(e.target.value)}>
             <option value="">All vacancies</option>
             {jobs.map((j) => (
@@ -110,26 +102,23 @@ export default function CandidatesPage() {
         {readOnly && <Badge>Read-only monitoring view</Badge>}
 
         {isLoading ? (
-          <Loader2 className="animate-spin text-ers-primary" aria-label="Loading" />
+          <LoadingRows />
         ) : loadError ? (
-          <p role="alert" className="text-sm text-ers-danger">{loadError.message}</p>
+          <ErrorState error={loadError} onRetry={refetch} />
         ) : rows.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-ers-line p-8 text-center text-sm text-ers-ink-soft">
-            No applications match these filters.
-          </p>
+          <EmptyState icon={SearchX} title="No applications match">Try a different stage, vacancy or search term.</EmptyState>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-ers-line bg-white/70">
-            <table className="w-full text-sm text-left">
-              <thead className="text-label text-ers-ink-soft bg-ers-ink/5">
+          <Table>
+              <thead>
                 <tr>
-                  <th scope="col" className="px-4 py-3">Candidate</th>
-                  <th scope="col" className="px-4 py-3">Vacancy</th>
-                  <th scope="col" className="px-4 py-3">Stage</th>
-                  <th scope="col" className="px-4 py-3 hidden md:table-cell">Updated</th>
-                  <th scope="col" className="px-4 py-3">Your next step</th>
+                  <Th>Candidate</Th>
+                  <Th>Vacancy</Th>
+                  <Th>Stage</Th>
+                  <Th className="hidden md:table-cell">Updated</Th>
+                  <Th>Your next step</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ers-line">
+              <tbody className={tbodyClass}>
                 {rows.map((a) => {
                   const job = a.job
                   const action = nextAction(a, user)
@@ -161,8 +150,7 @@ export default function CandidatesPage() {
                   )
                 })}
               </tbody>
-            </table>
-          </div>
+            </Table>
         )}
       </div>
 

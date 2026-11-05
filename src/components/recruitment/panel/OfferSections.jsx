@@ -23,7 +23,7 @@ export function OfferResponseSection({ act, actions }) {
         </p>
         <div className="flex gap-2">
           <Button onClick={() => act(() => actions.respondToOffer('ACCEPTED'))}>Accepted</Button>
-          <Button variant="secondary" className="!text-ers-danger" onClick={() => act(() => actions.respondToOffer('DECLINED'))}>Declined</Button>
+          <Button variant="danger" onClick={() => act(() => actions.respondToOffer('DECLINED'))}>Declined</Button>
         </div>
       </Card>
     </Section>

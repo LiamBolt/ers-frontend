@@ -1,69 +1,96 @@
-@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/geist';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Tokens are RGB channels so Tailwind can apply opacity (bg-ers-primary/10).
+     Every text pairing is at least 4.5:1 (ratios noted are on the surface). */
+  --ers-bg-rgb: 249 248 247;        /* quiet neutral for tinted areas (table headers, empty states) */
+  --ers-surface-rgb: 255 255 255;   /* page, cards, inputs */
+  --ers-ink-rgb: 23 21 28;          /* primary text (17:1) */
+  --ers-ink-soft-rgb: 74 71 80;     /* secondary text (9.1:1) */
+  --ers-muted-rgb: 106 102 112;     /* placeholders, captions (5.3:1) */
+  --ers-line-rgb: 229 226 224;      /* borders and dividers */
+
+  --ers-primary-rgb: 194 60 20;     /* actions, links, selection (5.3:1) */
+  --ers-primary-hover-rgb: 168 51 15;
+  --ers-primary-ink-rgb: 255 248 245; /* text on primary (5.1:1) */
+  --ers-accent-rgb: 47 111 94;      /* success, completed (5.9:1) */
+  --ers-danger-rgb: 176 47 47;      /* errors, destructive (6.6:1) */
+  --ers-warning-rgb: 138 90 12;     /* attention (5.9:1) */
+
+  --ers-sidebar-rgb: 23 21 28;      /* navigation rail */
+  --ers-sidebar-fg-rgb: 255 248 245;
+  --ers-scrim-rgb: 23 21 28;        /* modal / drawer backdrop */
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ers-bg-rgb: 30 28 36;
+  --ers-surface-rgb: 20 18 24;
+  --ers-ink-rgb: 244 242 240;       /* 16.7:1 */
+  --ers-ink-soft-rgb: 190 186 194;  /* 9.7:1 */
+  --ers-muted-rgb: 150 146 156;     /* 6.1:1 */
+  --ers-line-rgb: 52 49 60;
+
+  --ers-primary-rgb: 240 113 74;    /* 6.3:1 on surface */
+  --ers-primary-hover-rgb: 255 138 99;
+  --ers-primary-ink-rgb: 26 11 6;   /* text on primary button (6.5:1) */
+  --ers-accent-rgb: 94 196 168;     /* 8.8:1 */
+  --ers-danger-rgb: 255 138 138;    /* 8.2:1 */
+  --ers-warning-rgb: 232 176 76;    /* 9.5:1 */
+
+  --ers-sidebar-rgb: 10 9 13;
+  --ers-sidebar-fg-rgb: 244 242 240;
+  --ers-scrim-rgb: 0 0 0;
+}
+
 :root {
-  --ers-bg: #FDF1EE;
-  --ers-surface: #FFFFFF;
-  --ers-ink: #17151C;
-  --ers-ink-soft: #4A4750;
-  --ers-line: #EAD9D3;
-  --ers-primary: #E8592E;
-  --ers-primary-ink: #FFF8F5;
-  --ers-accent: #2F6F5E;
-  --ers-danger: #C43D3D;
-  --ers-warning: #B8842E;
+  /* Plain-CSS aliases */
+  --ers-bg: rgb(var(--ers-bg-rgb));
+  --ers-surface: rgb(var(--ers-surface-rgb));
+  --ers-ink: rgb(var(--ers-ink-rgb));
+  --ers-line: rgb(var(--ers-line-rgb));
+  --ers-primary: rgb(var(--ers-primary-rgb));
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--ers-surface);
+    color: var(--ers-ink);
+  }
+
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+
+  ::selection {
+    background: rgb(var(--ers-primary-rgb) / 0.22);
+    color: var(--ers-ink);
+  }
+
+  /* Themed scrollbars (thin, neutral) instead of browser defaults. */
+  * { scrollbar-width: thin; scrollbar-color: var(--ers-line) transparent; }
 }
 
 @layer components {
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 1.25rem;
-    box-shadow:
-      0 1px 1px rgba(23, 21, 28, 0.03),
-      0 8px 24px rgba(232, 89, 46, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-
-  .bg-blobs {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .bg-blobs::before,
-  .bg-blobs::after {
-    content: '';
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(80px);
-  }
-
-  .bg-blobs::before {
-    width: 600px;
-    height: 600px;
-    background: rgba(232, 89, 46, 0.14);
-    top: -10%;
-    right: -10%;
-  }
-
-  .bg-blobs::after {
-    width: 400px;
-    height: 400px;
-    background: rgba(47, 111, 94, 0.12);
-    bottom: -10%;
-    left: -5%;
-  }
-
-  .input-surface {
-    background: rgba(255, 255, 255, 0.85);
+  /* The one elevated container. Solid, with a neutral layered shadow. */
+  .surface-panel {
+    background: var(--ers-surface);
+    border: 1px solid var(--ers-line);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.04);
   }
 }
 
@@ -84,15 +111,13 @@
 }
 
 @keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.animate-slide-down {
-  animation: slide-down 0.2s ease-out;
+.animate-slide-down { animation: slide-down 0.2s cubic-bezier(0.2, 0, 0, 1); }
+
+@keyframes skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
+.animate-skeleton { animation: skeleton 1.4s ease-in-out infinite; }

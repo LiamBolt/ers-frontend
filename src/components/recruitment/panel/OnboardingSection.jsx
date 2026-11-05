@@ -8,12 +8,12 @@ function ChecklistItem({ label, stamp, canAct, actionLabel, onAct }) {
   return (
     <li className="flex items-center justify-between gap-3 text-sm">
       <span className="flex items-center gap-2 text-ers-ink">
-        {stamp ? <CheckCircle2 size={16} className="text-ers-accent" /> : <Circle size={16} className="text-ers-ink-soft/50" />}
+        {stamp ? <CheckCircle2 size={16} className="text-ers-accent" /> : <Circle size={16} className="text-ers-muted" />}
         {label}
         {stamp && <span className="text-caption text-ers-ink-soft">{stamp.by} · {fmtDate(stamp.at)}</span>}
       </span>
       {!stamp && canAct && (
-        <Button variant="secondary" className="!px-3 !py-1 !text-xs" onClick={onAct}>{actionLabel}</Button>
+        <Button variant="secondary" size="sm" onClick={onAct}>{actionLabel}</Button>
       )}
     </li>
   )
