@@ -1,0 +1,53 @@
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import Input from '../ui/Input'
+import Button from '../ui/Button'
+import { usePanelists } from '../../hooks/queries'
+
+const schema = z.object({
+  date: z.string().min(1, 'Choose a date and time').refine((v) => new Date(v) > new Date(), 'Pick a time in the future'),
+  location: z.string().min(3, 'Enter a location or meeting link'),
+  panel: z.array(z.string()).min(1, 'Assign at least one panel member'),
+})
+
+export default function ScheduleInterviewForm({ onSubmit }) {
+  const { data: panelists = [], isLoading } = usePanelists()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(schema), defaultValues: { date: '', location: '', panel: [] } })
+
+  return (
+    <form
+      onSubmit={handleSubmit((d) => onSubmit({ ...d, date: new Date(d.date).toISOString() }))}
+      className="space-y-4"
+      noValidate
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Input label="Date & time" type="datetime-local" required error={errors.date?.message} {...register('date')} />
+        <Input label="Location" placeholder="Room or meeting link" required error={errors.location?.message} {...register('location')} />
+      </div>
+      <fieldset>
+        <legend className="block text-sm font-semibold text-ers-ink mb-1.5">
+          Panel members<span className="text-ers-danger ml-0.5">*</span>
+        </legend>
+        <div className="space-y-2">
+          {isLoading && <p className="text-sm text-ers-ink-soft">Loading panel members…</p>}
+          {!isLoading && panelists.length === 0 && (
+            <p className="text-sm text-ers-ink-soft">No interview panel members are registered yet. Ask an administrator to create some.</p>
+          )}
+          {panelists.map((p) => (
+            <label key={p.id} className="flex items-center gap-2 text-sm text-ers-ink">
+              <input type="checkbox" value={p.id} className="accent-[var(--ers-primary)]" {...register('panel')} />
+              {p.name} <span className="text-ers-ink-soft text-xs">{p.email}</span>
+            </label>
+          ))}
+        </div>
+        {errors.panel && <p className="text-xs text-ers-danger mt-1">{errors.panel.message}</p>}
+      </fieldset>
+      <Button type="submit">Schedule interview</Button>
+    </form>
+  )
+}

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Input from '../ui/Input'
 import Button from '../ui/Button'
 
@@ -36,23 +36,15 @@ export default function LoginForm() {
   const onSubmit = async (data) => {
     setIsLoading(true)
     setBannerError(null)
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    const result = await login(data.email, data.password)
     setIsLoading(false)
-    
-    const result = login(data.email)
-    
-    if (result.success) {
-      if (result.user.role === 'HR_OFFICER') {
-        navigate('/vacancy')
-      } else if (result.user.role === 'CANDIDATE') {
-        navigate('/candidate')
-      } else {
-        navigate('/')
-      }
-    } else {
+
+    if (!result.success) {
       setBannerError(result.error)
+      return
     }
+    const homeByRole = { HR_OFFICER: '/vacancy', CANDIDATE: '/candidate' }
+    navigate(homeByRole[result.user.role] ?? '/')
   }
 
   return (
@@ -113,6 +105,13 @@ export default function LoginForm() {
           Sign in
         </Button>
       </form>
+
+      <p className="text-sm text-ers-ink-soft text-center mt-6">
+        New candidate?{' '}
+        <Link to="/register" className="text-ers-primary font-semibold hover:underline">
+          Create an account
+        </Link>
+      </p>
     </div>
   )
 }

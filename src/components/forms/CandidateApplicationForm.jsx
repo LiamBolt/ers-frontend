@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import Select from '../ui/Select'
+import { submitApplication } from '../../api/applications'
+import { keys, useJobs } from '../../hooks/queries'
+import { useAuth } from '../../context/AuthContext'
 import Input from '../ui/Input'
 import TextArea from '../ui/TextArea'
 import Button from '../ui/Button'
@@ -38,6 +43,7 @@ const referenceSchema = z.object({
 })
 
 const schema = z.object({
+  jobId: z.string().min(1, 'Choose the vacancy you are applying for'),
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(80, 'Full name cannot exceed 80 characters').regex(/^[a-zA-Z\s-]+$/, 'Only letters, spaces, and hyphens allowed'),
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
   phone: z.string().min(1, 'Phone number is required').regex(phoneRegex, 'Enter a valid phone number'),
@@ -57,6 +63,14 @@ const schema = z.object({
 export default function CandidateApplicationForm({ onSuccess }) {
   const [submitted, setSubmitted] = useState(false)
   const [submittedData, setSubmittedData] = useState(null)
+  const [serverError, setServerError] = useState(null)
+  const { user } = useAuth()
+  const { data: jobs = [], isLoading: jobsLoading } = useJobs()
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: submitApplication,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.applications }),
+  })
 
   const {
     register,
@@ -68,8 +82,9 @@ export default function CandidateApplicationForm({ onSuccess }) {
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      fullName: '',
-      email: '',
+      jobId: '',
+      fullName: user?.name ?? '',
+      email: user?.email ?? '',
       phone: '',
       address: '',
       qualifications: [{ qualification: '', institution: '', yearCompleted: currentYear }],
@@ -95,8 +110,24 @@ export default function CandidateApplicationForm({ onSuccess }) {
     }
   }
 
-  const onSubmit = (data) => {
-    console.log('Application submitted:', data)
+  const onSubmit = async (data) => {
+    setServerError(null)
+    // multipart: files can't travel as JSON, so the lists are sent as JSON strings.
+    const form = new FormData()
+    form.append('jobId', data.jobId)
+    form.append('fullName', data.fullName)
+    form.append('phone', data.phone)
+    form.append('address', data.address)
+    form.append('qualifications', JSON.stringify(data.qualifications))
+    form.append('experience', JSON.stringify(data.experience ?? []))
+    form.append('references', JSON.stringify(data.references))
+    form.append('cv', data.cv)
+    try {
+      await mutation.mutateAsync(form)
+    } catch (err) {
+      setServerError(err.message)
+      return
+    }
     setSubmittedData(data)
     setSubmitted(true)
     onSuccess && onSuccess(data)
@@ -121,6 +152,21 @@ export default function CandidateApplicationForm({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8" noValidate>
+      {/* Vacancy */}
+      <section>
+        <h2 className="text-h2 text-ers-ink mb-4">Vacancy</h2>
+        <Select label="Vacancy" required error={errors.jobId?.message} disabled={jobsLoading} {...register('jobId')}>
+          <option value="" disabled>
+            {jobsLoading ? 'Loading vacancies…' : jobs.length ? 'Select a vacancy' : 'No vacancies are open right now'}
+          </option>
+          {jobs.map((j) => (
+            <option key={j.id} value={j.id}>
+              {j.title} — {j.department}
+            </option>
+          ))}
+        </Select>
+      </section>
+
       {/* Personal Information */}
       <section>
         <h2 className="text-h2 text-ers-ink mb-4">Personal Information</h2>
@@ -138,6 +184,8 @@ export default function CandidateApplicationForm({ onSuccess }) {
               type="email"
               placeholder="you@example.com"
               required
+              readOnly
+              hint="Your account email"
               error={errors.email?.message}
               {...register('email')}
             />
@@ -349,7 +397,14 @@ export default function CandidateApplicationForm({ onSuccess }) {
         />
       </section>
 
-      <Button type="submit" className="w-full sm:w-auto">
+      {serverError && (
+        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg" role="alert">
+          <AlertCircle size={16} />
+          <span>{serverError}</span>
+        </div>
+      )}
+
+      <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
         Submit application
       </Button>
     </form>

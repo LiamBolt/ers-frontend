@@ -1,48 +1,52 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import * as authApi from '../api/auth'
+import { ApiError } from '../api/client'
 
 const AuthContext = createContext(null)
 
-export const DUMMY_USERS = {
-  'candidate@ers.com': { email: 'candidate@ers.com', role: 'CANDIDATE', name: 'Candidate User' },
-  'hr@ers.com': { email: 'hr@ers.com', role: 'HR_OFFICER', name: 'HR Officer' },
-  'interviewer@ers.com': { email: 'interviewer@ers.com', role: 'INTERVIEWER', name: 'Interviewer User' },
-  'manager@ers.com': { email: 'manager@ers.com', role: 'MANAGER', name: 'Manager User' },
-  'admin@ers.com': { email: 'admin@ers.com', role: 'ADMIN', name: 'Admin User' }
-}
+export const SESSION_KEY = ['session']
 
+// The signed-in user comes from the server session (Auth.js cookie), never from
+// localStorage. The role is re-checked server-side on every request.
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    // Check if user is in localStorage
-    const storedUser = localStorage.getItem('ers_user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setIsLoading(false)
-  }, [])
+  const { data: user = null, isLoading } = useQuery({
+    queryKey: SESSION_KEY,
+    queryFn: async () => {
+      try {
+        return await authApi.getMe()
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) return null
+        throw err
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
 
-  const login = (email) => {
-    const foundUser = DUMMY_USERS[email.toLowerCase()]
-    if (foundUser) {
-      setUser(foundUser)
-      localStorage.setItem('ers_user', JSON.stringify(foundUser))
-      return { success: true, user: foundUser }
-    }
-    return { success: false, error: 'User not found. Please use a valid testing email.' }
-  }
-
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('ers_user')
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
-      {children}
-    </AuthContext.Provider>
+  const login = useCallback(
+    async (email, password) => {
+      try {
+        const me = await authApi.signIn(email, password)
+        queryClient.setQueryData(SESSION_KEY, me)
+        return { success: true, user: me }
+      } catch (err) {
+        return { success: false, error: err.message }
+      }
+    },
+    [queryClient]
   )
+
+  const logout = useCallback(async () => {
+    await authApi.signOut().catch(() => undefined)
+    queryClient.clear()
+    queryClient.setQueryData(SESSION_KEY, null)
+  }, [queryClient])
+
+  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext)

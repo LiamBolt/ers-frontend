@@ -12,7 +12,7 @@ const navItems = [
   { label: 'Reports', href: '/reports', icon: null, roles: ['MANAGER', 'ADMIN'] },
 ]
 
-export default function AppLayout({ title, subtitle, children }) {
+export default function AppLayout({ title, subtitle, wide = false, children }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { user, logout } = useAuth()
   const location = useLocation()
@@ -106,7 +106,7 @@ export default function AppLayout({ title, subtitle, children }) {
       </aside>
       {/* Main content */}
       <main className="md:pl-64 pt-16 md:pt-0 relative">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10">
+        <div className={`${wide ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10`}>
           <div className="glass-panel p-6 sm:p-8">
             {title && <h1 className="text-display text-ers-ink mb-1">{title}</h1>}
             {subtitle && <p className="text-ers-ink-soft mb-6">{subtitle}</p>}

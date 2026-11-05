@@ -28,13 +28,13 @@ const Input = forwardRef(function Input(
             focus:outline-none focus:ring-2 focus:ring-ers-primary/30 focus:border-ers-primary
             ${error ? 'border-ers-danger focus:border-ers-danger focus:ring-ers-danger/20' : 'border-ers-line'}
             ${className}
-            ${props.endNode ? 'pr-10' : ''}
+            ${endNode ? 'pr-10' : ''}
           `}
           {...props}
         />
-        {props.endNode && (
+        {endNode && (
           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-            {props.endNode}
+            {endNode}
           </div>
         )}
       </div>

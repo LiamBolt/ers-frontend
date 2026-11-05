@@ -5,36 +5,12 @@ import LoginPage from './pages/LoginPage'
 import VacancyCreationPage from './pages/VacancyCreationPage'
 import CandidateApplicationPage from './pages/CandidateApplicationPage'
 import NotFoundPage from './pages/NotFoundPage'
+import RegisterPage from './pages/RegisterPage'
 import ProtectedRoute from './components/ProtectedRoute'
-import AppLayout from './components/layout/AppLayout'
-import { HardHat } from 'lucide-react'
-
-function DashboardPlaceholder() {
-  const { user } = useAuth()
-  return (
-    <AppLayout title="Dashboard" subtitle={`Welcome back, ${user?.name || 'User'}`}>
-      <div className="glass-panel p-8 text-center text-ers-ink-soft flex flex-col items-center">
-        <div className="w-16 h-16 bg-ers-primary/10 text-ers-primary rounded-full flex items-center justify-center mb-4 border border-ers-primary/20">
-          <HardHat size={32} />
-        </div>
-        <p>This is your dashboard. Additional features will be added here in the future.</p>
-      </div>
-    </AppLayout>
-  )
-}
-
-function PlaceholderPage({ title }) {
-  return (
-    <AppLayout title={title} subtitle="Under Construction">
-      <div className="glass-panel p-8 text-center text-ers-ink-soft flex flex-col items-center">
-        <div className="w-16 h-16 bg-ers-primary/10 text-ers-primary rounded-full flex items-center justify-center mb-4 border border-ers-primary/20">
-          <HardHat size={32} />
-        </div>
-        <p>This page is currently under construction.</p>
-      </div>
-    </AppLayout>
-  )
-}
+import DashboardPage from './pages/DashboardPage'
+import CandidatesPage from './pages/CandidatesPage'
+import InterviewsPage from './pages/InterviewsPage'
+import ReportsPage from './pages/ReportsPage'
 
 function AppRoutes() {
   const { user, isLoading } = useAuth()
@@ -55,10 +31,15 @@ function AppRoutes() {
         element={user ? <Navigate to="/" replace /> : <LoginPage />} 
       />
 
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/" replace /> : <RegisterPage />}
+      />
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         {/* Dashboard available to all logged in users */}
-        <Route path="/" element={<DashboardPlaceholder />} />
+        <Route path="/" element={<DashboardPage />} />
         
         {/* Role-specific protected routes */}
         <Route element={<ProtectedRoute allowedRoles={['HR_OFFICER', 'ADMIN']} />}>
@@ -72,12 +53,12 @@ function AppRoutes() {
         
         {/* Management routes */}
         <Route element={<ProtectedRoute allowedRoles={['HR_OFFICER', 'INTERVIEWER', 'MANAGER', 'ADMIN']} />}>
-          <Route path="/candidates" element={<PlaceholderPage title="Candidates List" />} />
-          <Route path="/interviews" element={<PlaceholderPage title="Interviews" />} />
+          <Route path="/candidates" element={<CandidatesPage />} />
+          <Route path="/interviews" element={<InterviewsPage />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']} />}>
-          <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+          <Route path="/reports" element={<ReportsPage />} />
         </Route>
       </Route>
 

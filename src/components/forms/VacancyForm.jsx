@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { PlusCircle, CheckCircle2 } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { createJob } from '../../api/jobs'
+import { keys } from '../../hooks/queries'
+import { useAuth } from '../../context/AuthContext'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
 import TextArea from '../ui/TextArea'
@@ -29,6 +33,13 @@ const schema = z.object({
 export default function VacancyForm({ onSuccess }) {
   const [submitted, setSubmitted] = useState(false)
   const [submittedData, setSubmittedData] = useState(null)
+  const [serverError, setServerError] = useState(null)
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: createJob,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.jobs }),
+  })
 
   const {
     register,
@@ -45,8 +56,20 @@ export default function VacancyForm({ onSuccess }) {
     },
   })
 
-  const onSubmit = (data) => {
-    console.log('Vacancy submitted:', data)
+  const onSubmit = async (data) => {
+    setServerError(null)
+    try {
+      await mutation.mutateAsync({
+        title: data.jobTitle,
+        department: data.department,
+        numPositions: data.numberOfPositions,
+        requiredSkills: data.requiredSkills,
+        closingDate: data.closingDate,
+      })
+    } catch (err) {
+      setServerError(err.message)
+      return
+    }
     setSubmittedData(data)
     setSubmitted(true)
     onSuccess && onSuccess(data)
@@ -74,7 +97,7 @@ export default function VacancyForm({ onSuccess }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       <div className="flex items-center gap-2 mb-4">
         <Badge variant="default">ID: Auto-generated</Badge>
-        <Badge variant="default">Created by: HR Officer</Badge>
+        <Badge variant="default">Created by: {user?.name}</Badge>
       </div>
 
       <Input
@@ -133,7 +156,14 @@ export default function VacancyForm({ onSuccess }) {
         {...register('requiredSkills')}
       />
 
-      <Button type="submit" className="w-full sm:w-auto">
+      {serverError && (
+        <div className="flex items-center gap-2 bg-ers-danger/10 text-ers-danger text-sm px-4 py-3 rounded-lg" role="alert">
+          <AlertCircle size={16} />
+          <span>{serverError}</span>
+        </div>
+      )}
+
+      <Button type="submit" isLoading={mutation.isPending} className="w-full sm:w-auto">
         Publish vacancy
       </Button>
     </form>
