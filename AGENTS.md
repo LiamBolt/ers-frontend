@@ -36,35 +36,26 @@ relying on it. Verify changes with `npm run build` and by loading the page.
 
 ## Layout
 
+**Read `docs/ARCHITECTURE.md` first**: it is the code map (where everything lives,
+a quick finder, and how to add pages, endpoints and stages).
+
 ```
 src/
-  main.jsx            entry; QueryClientProvider
-  App.jsx             routes + role gating (the source of truth for access)
-  api/                fetch calls only, one file per backend area (client.js
-                      is the single fetch wrapper; auth.js talks to Auth.js)
-  hooks/              queries.js (useApplications, useJobs, ...) and
-                      useApplicationActions.js (every stage action)
-  context/AuthContext.jsx   session user from the server (TanStack query)
-  data/recruitment.js       UI constants only (state labels/colours); no records
-  utils/                    format.js, csv.js
-  components/
-    ProtectedRoute.jsx      auth + allowedRoles guard (renders <Outlet/>)
-    layout/                 AppLayout (signed-in shell), AuthLayout
-    ui/                     Button, Input, Select, TextArea, Tabs, Badge, Modal, FileUpload
-    forms/                  one form per file (Login, Register, Vacancy, Application, ...)
-    recruitment/            ApplicationPanel (shell) + panel/* (one section per
-                            stage), StageTracker, HistoryTimeline, StateBadge
-    reports/                small report widgets
-  pages/                    one file per route; pages stay thin and compose
-                            AppLayout + components
+  main.jsx            entry: providers
+  styles/index.css    design tokens, dark theme
+  app/                router (App.jsx), layout/ (shell + sidebar), 404, error boundary
+  shared/             api/ (client, query keys), ui/ (primitives), layout/ (status pages),
+                      brand/ (logo), constants/, lib/, theme/
+  features/<name>/    auth landing dashboard vacancies applications interviews offers
+                      reports users settings notifications; each has pages/,
+                      components/, lib/, api.js, hooks.js
 ```
 
-Rules: components never call `fetch`; they use hooks, hooks use `src/api/`.
-Keep files small and single-purpose; when a component grows several
-independent sections, split them (see `recruitment/panel/`).
-
-`src/App.css` and `src/assets/{hero.png,react.svg,vite.svg}` are leftovers
-from the Vite template; do not build on them.
+Rules: components never call `fetch`; they use a feature's `hooks.js`, which use
+its `api.js`. Dependencies point one way: `app` -> `features` -> `shared`
+(`shared` never imports a feature). Use the `@/` alias for imports outside the
+current folder and `./` for siblings. Keep files small: split a file that passes
+about 120 lines or mixes unrelated parts (see `application-form/`).
 
 ## Auth and roles
 
@@ -78,7 +69,7 @@ hides what the API would refuse.
 **There is no dummy data anywhere.** Do not add seed records, fake users or
 mock arrays to the frontend or the backend seed (`npm run seed` creates one
 admin). The one exception is `npm run seed:jobs`, which publishes the agency's
-real vacancies for the landing page; its list (`backend/src/db/seed-jobs.ts`)
+real vacancies for the landing page; its list (`backend/src/database/seeds/jobs.data.ts`)
 must be approved by the human before it is run against the live database, and
 it is idempotent. Test data made while developing must be removed afterwards
 (`backend/scripts/cleanup-test-data.ts`).
@@ -88,7 +79,8 @@ Roles: `CANDIDATE`, `HR_OFFICER`, `INTERVIEWER`, `MANAGER`, `ADMIN`.
 | Route | Roles |
 |---|---|
 | `/` | visitors: the public landing page with open positions; signed-in users: their role-specific dashboard |
-| `/login`, `/register` | public (redirect to `/` when signed in) |
+| `/jobs/:id` | public: one vacancy with full details and an Apply panel |
+| `/login`, `/register` | public (a signed-in user is redirected to their home, keeping `?job=`) |
 | `/settings` | any signed-in user (appearance theme, account summary) |
 | `/vacancy` | `HR_OFFICER`, `ADMIN` |
 | `/candidate` | `CANDIDATE` (application form) |
@@ -109,7 +101,7 @@ decoration. The standards below were set from an accessibility audit and from
 Anthropic's `frontend-design`, Impeccable, Vercel `web-design-guidelines` and
 `make-interfaces-feel-better` guidance.
 
-**Tokens** live in `src/index.css` as RGB channels (`--ers-primary-rgb: 194 60 20`)
+**Tokens** live in `src/styles/index.css` as RGB channels (`--ers-primary-rgb: 194 60 20`)
 and are exposed in `tailwind.config.js` with `<alpha-value>`, so opacity classes
 work (`bg-ers-primary/10`). Never define a Tailwind colour as a plain
 `var(--hex)`: opacity utilities silently stop compiling. Restart the Vite dev
@@ -163,18 +155,18 @@ Rules:
   Settings page and applies **only inside dashboards**: `AppLayout` calls
   `useDocumentTheme()`, public pages (landing, sign-in, register) never do and
   are always light. Dark tokens live under `[data-theme="dark"]` in
-  `src/index.css`. Use `ers-sidebar`/`ers-sidebar-fg` for the navigation rail
+  `src/styles/index.css`. Use `ers-sidebar`/`ers-sidebar-fg` for the navigation rail
   and dark surfaces that must stay dark in both themes, and `ers-scrim` for
   backdrops; never use `ers-ink` as a background colour (it flips in dark mode).
-- **Logo:** `src/components/brand/Logo.jsx` (variants `full`, `mark`, `icon`;
-  tone `dark`/`light`). Geometry lives only in `logoSvg.js`; after changing it
+- **Logo:** `src/shared/brand/Logo.jsx` (variants `full`, `mark`, `icon`;
+  tone `dark`/`light`). Geometry lives only in `src/shared/brand/logoSvg.js`; after changing it
   run `node scripts/build-logo.mjs` to regenerate `public/logo*.svg` and the
   favicon. Do not add raster logos.
-- **Landing page:** `src/pages/LandingPage.jsx` and `src/components/landing/`.
+- **Landing page:** `src/features/landing/` (home page, job page `/jobs/:id`, header, footer).
   Hero photo is `public/images/landing-hero-*` (optimised from the supplied
   Pexels photo).
 
-Primitives in `src/components/ui/`: `Button` (variants `primary`, `secondary`,
+Primitives in `src/shared/ui/`: `Button` (variants `primary`, `secondary`,
 `danger`, `ghost`; sizes `md`, `sm`), `Input`, `Select`, `TextArea`,
 `SearchInput`, `Badge`, `Tabs`, `Modal` (focus trap, scroll lock, restores
 focus), `Table`/`Th`, `Skeleton`/`LoadingRows`, `EmptyState`, `Spinner`,
@@ -190,14 +182,15 @@ restyling one-offs with `!important` overrides.
   surface errors via the `error` prop of the ui primitives.
 - Icons from `lucide-react` only. Note the pinned old version (0.263): check
   an icon exists in `node_modules/lucide-react` before importing it.
-- New page: create `src/pages/XPage.jsx`, wrap content in `AppLayout`
-  (`title`, `subtitle`), then register the route in `App.jsx` with the right
-  `allowedRoles`.
-- Server state: add a function in `src/api/`, expose it as a hook in
-  `src/hooks/`, and invalidate the right query keys after mutations. The base
+- New page: create `src/features/<feature>/pages/XPage.jsx`, wrap content in
+  `AppLayout` (`title`, `subtitle`), then register the route in
+  `src/app/App.jsx` with the right `allowedRoles` (and add it to
+  `src/app/layout/navigation.js` if it belongs in the sidebar).
+- Server state: add a function in the feature's `api.js`, expose it as a hook in
+  its `hooks.js` (cache keys live in `src/shared/api/queryKeys.js`), and invalidate the right query keys after mutations. The base
   URL is relative (`/api`) so the session cookie stays same-origin; override
   only with `VITE_API_URL`.
-- Errors: `ApiError` (src/api/client.js) carries `kind` (`network`, `unavailable`,
+- Errors: `ApiError` (`src/shared/api/client.js`) carries `kind` (`network`, `unavailable`,
   `server`, `auth`, `permission`, `notfound`, `limit`, `validation`) and a message
   written for people; 5xx bodies are never shown. Show `err.message` in forms.
   For failed data loads use `<ErrorState error onRetry={refetch} />`; never print
@@ -223,9 +216,10 @@ restyling one-offs with `!important` overrides.
   etc.) without asking the human first. The Chrome extension tools are never
   used; browse with the `agent-browser` CLI.
 - **Backend conventions:** TypeScript, one folder per module under
-  `backend/src/modules/` (`routes -> controller -> service -> repository`,
-  Zod schema beside them). State changes only through
-  `workflow.engine.ts#moveState`; its rules live in `workflow.rules.ts`. Update
+  `backend/src/modules/` (the lifecycle ones under `modules/recruitment/`;
+  `routes -> controller -> service -> repository`, Zod schema beside them). State
+  changes only through `workflow.engine.ts#moveState`; its rules live in
+  `workflow.rules.ts`. Update
   `backend/README.md` when you add an endpoint or env var.
 - **Verify before claiming done:** run `npm run build` (frontend) and
   `npx tsc --noEmit` plus `backend/scripts/smoke.sh` (backend) with the API

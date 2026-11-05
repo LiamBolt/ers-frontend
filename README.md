@@ -123,49 +123,38 @@ cookie same-origin, which avoids CORS and third-party-cookie problems.
 
 ## Repository layout
 
+The full map, with a "where do I find..." table and how to add things, is in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). In short, code is organised by
+feature, not by file type:
+
 ```
 .
-|-- README.md                 this file
-|-- AGENTS.md                 the one instruction file for agents and humans
-|-- docs/                     the SRS (PDF)
-|-- public/                   logo and favicon (SVG, generated), static assets
+|-- README.md  AGENTS.md      overview and rules for contributors
+|-- docs/                     ARCHITECTURE.md (code map), the SRS, brand assets
+|-- public/                   logo and favicon (SVG, generated), hero photos
+|-- scripts/                  repo-level scripts (build-logo.mjs)
 |-- vercel.json               /api rewrite to the Render API, then SPA fallback
-|-- vite.config.js            dev server and /api proxy
 |-- src/                      React frontend
-|   |-- api/                  fetch calls only, one file per backend area
-|   |-- hooks/                TanStack Query hooks and stage-action mutations
-|   |-- context/              AuthContext (session user from the server)
-|   |-- data/                 UI constants (labels, colours); never records
-|   |-- utils/                formatting and CSV helpers
-|   |-- components/
-|   |   |-- layout/           app shell and auth layout
-|   |   |-- ui/               Button, Input, Select, TextArea, SearchInput, Tabs, Badge, Modal, Table, Skeleton, EmptyState, Spinner, FileUpload
-|   |   |-- users/            admin user-management row
-|   |   |-- forms/            one form per file
-|   |   |-- recruitment/      application panel (one section per stage), tracker, timeline
-|   |   `-- reports/          report widgets
-|   `-- pages/                one file per route; thin
+|   |-- app/                    router, app shell (sidebar, layout), 404, error boundary
+|   |-- shared/                 ui primitives, api client, constants, theme, logo
+|   |-- features/               one folder per area:
+|   |     auth  landing  dashboard  vacancies  applications  interviews
+|   |     offers  reports  users  settings  notifications
+|   `-- styles/                 design tokens and dark theme
 `-- backend/                  Node.js API (see backend/README.md)
-    |-- prisma/               schema and migrations
-    |-- scripts/              smoke test and test-data cleanup
-    |-- src/
-    |   |-- index.ts          app setup; Auth.js mounted at /api/auth
-    |   |-- config/           env, Cloudinary, upload rules
-    |   |-- auth/             Auth.js configuration
-    |   |-- middlewares/      requireAuth, requireRole, validation, errors
-    |   |-- utils/            http helpers, audit log, notifications
-    |   |-- routes/           mounts every module under /api
-    |   `-- modules/          one folder per feature (see below)
-    |-- Dockerfile  docker-compose.yml  Makefile
-    `-- .env.example
+    |-- prisma/                 schema and migrations
+    |-- scripts/                smoke test and test-data cleanup
+    `-- src/
+        |-- server.ts  app.ts    start the server / build the Express app
+        |-- config/  database/  auth/  common/  routes/
+        `-- modules/             accounts users jobs notifications reports
+                                 recruitment/ (workflow applications interviews
+                                 evaluations approvals offers onboarding)
 ```
 
-Backend modules follow one pattern per folder:
-`<name>.routes.ts` -> `<name>.controller.ts` -> `<name>.service.ts`
-(-> `<name>.repository.ts`) plus `<name>.schema.ts` for Zod validation. The
-modules are `accounts`, `users`, `jobs`, `applications`, `workflow`,
-`interviews`, `evaluations`, `approvals`, `offers`, `onboarding`,
-`notifications` and `reports`.
+Each backend module follows `routes -> controller -> service (-> repository)`
+with a Zod `schema`; each frontend feature uses `pages/`, `components/`, `lib/`,
+`api.js` and `hooks.js`.
 
 ## Getting started
 
@@ -323,20 +312,20 @@ Notes:
 
 - Plain JavaScript with function components; one default export per file named
   after the file.
-- Components never call `fetch`. Data flows: component -> hook in `src/hooks/`
-  -> function in `src/api/` -> `src/api/client.js`.
+- Components never call `fetch`. Data flows: component -> hook in the feature's
+  `hooks.js` -> function in its `api.js` -> `src/shared/api/client.js`.
 - Server state lives in TanStack Query. After a mutation, write the returned
   application into the cache and invalidate dependent lists.
 - Forms use react-hook-form with a Zod schema. Show the server's message from
   `ApiError`, never a generic failure text.
-- Styling uses the `ers-*` colour tokens (RGB channels in `src/index.css`,
+- Styling uses the `ers-*` colour tokens (RGB channels in `src/styles/index.css`,
   exposed in `tailwind.config.js`). Do not hard-code colours. Text must meet
   4.5:1 contrast and input borders 3:1. Use the primitives in
-  `src/components/ui/` (Button, Input, Table, Modal, Skeleton, EmptyState, and so
+  `src/shared/ui/` (Button, Input, Table, Modal, Skeleton, EmptyState, and so
   on) instead of raw elements. The full design-system rules are in `AGENTS.md`
   under "Design system".
 - Keep components small. When a component grows several independent sections,
-  split it (see `src/components/recruitment/panel/`).
+  split it (see `src/features/applications/components/application-form/`).
 - Icons come from `lucide-react` only; the pinned version is old, so check an
   icon exists before importing it.
 - Access rules live in `src/App.jsx` through `<ProtectedRoute allowedRoles>`.
@@ -348,8 +337,8 @@ Notes:
   Services hold business rules and transactions and never touch `req` or `res`.
 - Validate every input with Zod in the module's `*.schema.ts`.
 - The recruitment state changes in exactly one place:
-  `modules/workflow/workflow.engine.ts` (`moveState`). The legal moves and the
-  role allowed for each live in `modules/workflow/workflow.rules.ts`. Never
+  `modules/recruitment/workflow/workflow.engine.ts` (`moveState`). The legal moves and the
+  role allowed for each live in `modules/recruitment/workflow/workflow.rules.ts`. Never
   update `Application.state` anywhere else. To add a stage or change who may act,
   edit the rules file and the relevant stage module.
 - History and audit rows are insert-only. Do not add update or delete paths.
@@ -403,9 +392,10 @@ agents and is kept in step with this README. The essentials:
 
 - **Orient quickly.** `graphify-out/` (if present) holds a knowledge graph of the
   repository; query it before grepping. The state machine is in
-  `backend/src/modules/workflow/`, the API contract is
-  `backend/src/modules/applications/application.serializer.ts`, and the
-  frontend data path is `src/api/` -> `src/hooks/` -> components.
+  `backend/src/modules/recruitment/workflow/`, the API contract is
+  `backend/src/modules/recruitment/applications/application.serializer.ts`, and the
+  frontend data path is a feature's `api.js` -> `hooks.js` -> components.
+  Start with `docs/ARCHITECTURE.md` to find anything.
 - **Never commit, push or deploy without the human's explicit approval.** Approval
   for one commit or deploy does not carry over to the next.
 - **Never add yourself or any AI as an author or co-author.** No
